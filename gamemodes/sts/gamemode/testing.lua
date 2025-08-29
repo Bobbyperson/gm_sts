@@ -41,6 +41,7 @@
     for _, id in pairs(teamsToSpawn) do
         for i = 1, 4 do
             local level = math.random(1, 4)
+         
             local keys = {}
             -- get keys of mobs[level]
             for key, _ in pairs(mobs[level]) do

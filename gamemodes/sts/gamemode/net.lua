@@ -50,6 +50,7 @@ if SERVER then
         net.WriteInt(box.strength, 4)
         net.WriteInt(box.level, 4)
         net.WriteString(box.key)
+        
         net.Send(player)
     end
 end

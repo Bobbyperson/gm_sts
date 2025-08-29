@@ -1004,6 +1004,7 @@ function beginFight()
     for _, ent in ipairs(ents.FindByClass("info_target")) do
         if ent:GetName() == "spawn_room_marker" then
             spawn_point = ent
+            break
         end
     end
  for _, id in pairs(teamsToSpawn) do
@@ -1013,16 +1014,8 @@ function beginFight()
 
 
             -- Check if mob has spawn function
-            if spawner[1].mob.spawnfunc == nil then
-            
-                if teamMobs[id] == nil then
-                
-                    teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
-                else
-                    --print("Adding regular mobs")
-                    TableConcat(teamMobs[id], spawner[1].mob:getSpawns(id, spawner[1].strength))
-                end
-            else
+            if spawner[1].mob.spawnfunc then
+
                 --print("Spawnfunc found! Adding " .. spawner[1].mob.name .. " to teamMobs table")
                 local newtable = {spawner[1].mob, id, spawner[1].strength, spawn_point:GetPos()}
                 if teamMobs[id] == nil then 
@@ -1030,6 +1023,17 @@ function beginFight()
                 else
                     table.insert(teamMobs[id], newtable)
                 end
+                
+            else
+
+                if teamMobs[id] == nil then
+
+                    teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
+                else
+                    --print("Adding regular mobs")
+                    TableConcat(teamMobs[id], spawner[1].mob:getSpawns(id, spawner[1].strength))
+                end
+
             end
         end
     end

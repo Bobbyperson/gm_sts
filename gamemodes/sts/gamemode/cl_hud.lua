@@ -77,6 +77,8 @@ function HUD()
         }
 
         local formattedBoxRarity = rarityNames[boxRarity]
+        print(SERVER and "server" or "client")
+        print(mobs[1]["fasttorso"].name)
         local boxMobName = mobs[boxRarity][boxKey].name
         -- We'll place these lines a bit below "Mob Info"
         local textBaseY = panelY + ScaleH(80)

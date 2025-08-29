@@ -96,7 +96,7 @@ hook.Add("OnEntityCreated", "TeamIndicatorCatcherHook", function(ent)
             return
         end
         -- Gotta wait for indicator to be created (or something idk it just works)
-        timer.Simple(6/66, function()
+        timer.Simple(1/66, function()
             if IsValid(ent) and ent.GetName and string.find(ent:GetName(), "cloned_indicator") then
                 
                 local targetQueueEntry = teamIndicatorQueue[1]
@@ -115,6 +115,7 @@ local function AttachTeamIndicator(target_entity, teamID, height_offset)
     for _ , ent in pairs(ents.GetAll()) do
         if ent:GetName() == "team_indicator_templator" then
             templator = ent
+            break
         end
     end
     if templator == nil then
@@ -355,6 +356,10 @@ local function AddShieldBulletHook()
             damage = game.GetAmmoNPCDamage(ammoTypeID)
         end
         -- shield health -= damage
+        if shieldregistry[closestShield.indx] == nil then
+            print("Shield was nil!")
+            return true 
+        end
         shieldregistry[closestShield.indx][3] = shieldregistry[closestShield.indx][3] - damage
         --print("Shield shot, current health is: " .. shieldregistry[i][3])
         if shieldregistry[closestShield.indx][3] <= 0 then
@@ -416,14 +421,16 @@ local function RollermineSpawn(teamID, delay, pos)
         -- rollermines tend to bounce around alot, and so on the "dont look up" map they can get out of bounds frequently
         local timeTilAutoKill = 90
         timer.Simple(timeTilAutoKill, function()
-            local killattack = DamageInfo()
-            killattack:SetDamage(9999)
-            killattack:SetAttacker(game.GetWorld())
-            killattack:SetInflictor(game.GetWorld())
-            killattack:SetDamageType(DMG_BLAST)
-            killattack:SetDamagePosition(rollermine:GetPos())
-            killattack:SetDamageForce(Vector(0,0,0))
-            rollermine:TakeDamageInfo(killattack)
+            if IsValid(rollermine) then
+                local killattack = DamageInfo()
+                killattack:SetDamage(9999)
+                killattack:SetAttacker(game.GetWorld())
+                killattack:SetInflictor(game.GetWorld())
+                killattack:SetDamageType(DMG_BLAST)
+                killattack:SetDamagePosition(rollermine:GetPos())
+                killattack:SetDamageForce(Vector(0,0,0))
+                rollermine:TakeDamageInfo(killattack)
+            end
         end)
         local timername = "RollermineChase_" .. rollermine:EntIndex()
         timer.Create(timername, 5, 0, function()
@@ -703,7 +710,7 @@ local function AntlionGuardSpawn(teamID, delay, pos)
             AttachTeamIndicator(guard, teamID, 120)
         end)
         -- This variable controls how long the guards take to automatically die
-        local timeTilAutoKill = 30
+        local timeTilAutoKill = 25
         timer.Simple(timeTilAutoKill, function()
             if IsValid(guard) then
                 local killattack = DamageInfo()
@@ -729,7 +736,9 @@ local function HunterSpawn(teamID, delay, pos)
         timer.Simple(0.2, function()
             AttachTeamIndicator(hunter, teamID, 120)
         end)
-        local hunterHealth = hunter:Health()
+        local hunterHealth = 90
+        
+        
         local hunterHookName = "HunterHook_".. hunter:EntIndex()
         
         hook.Add("EntityTakeDamage", hunterHookName, function(ent, dmginfo)
@@ -764,10 +773,10 @@ local function AcidSpitterSpawn(teamID, delay, pos)
         acidSpitter:Spawn()
 
         -- Antlions will kill themselves if they are spawned inside of something, like the triggers for pushing team units away from their spawns
-        -- Very hacky fix for this, but it works!
+        -- Very hacky fix for this, but it works kinda
         -- idk how this was avoided with the map templated antlions
         acidSpitter:SetNotSolid(true)
-        timer.Simple(0.6, function()
+        timer.Simple(0.8, function()
             acidSpitter:SetNotSolid(false)
         end)
         timer.Simple(0.2, function()
@@ -805,6 +814,7 @@ local function ManhackSpawn(teamID, delay, pos)
     end)
 end
 mobs[1] = {
+    
     ["headcrab"] = Mob.new("Headcrab", {"npc_headcrab"}, 1, 1),
     ["blackheadcrab"] = Mob.new("Black Headcrab", {"npc_blackheadcrab"}, 1),
     ["fastheadcrab"] = Mob.new("Fast Headcrab", {"npc_fastheadcrab"}, 1),
@@ -816,10 +826,10 @@ mobs[1] = {
     
 
     -- These are only here for debugging
-    --["stalker"] = Mob.new("Stalker", {"not_used"}, 1, 1, StalkerSpawn),
-   --["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
+   -- ["stalker"] = Mob.new("Stalker", {"not_used"}, 1, 1, StalkerSpawn)
+   --["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn),
    -- ["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.6, AcidSpitterSpawn)
-   -- ["combinesmg"] = Mob.new("SMG", {"npc_combinesmg"}, 1)
+  -- ["combinesmg"] = Mob.new("SMG", {"npc_combinesmg"}, 1)
     --["rocket"] = Mob.new("Rocketeer", {"npc_rocket"}, 1)
     --["sniper"] = Mob.new("Combine Sniper", {"not_used"}, 1, 1, CombineSniperSpawn),
     --["grenadier"] = Mob.new("Grenadier", {"not_used"}, 1, 1, GrenadierSpawn)
@@ -827,6 +837,7 @@ mobs[1] = {
 }
 
 mobs[2] = {
+
     ["medic"] = Mob.new("Medic", {"npc_medic"}, 1),
     ["shotgun"] = Mob.new("Shotgun", {"npc_shotgun"}, 1),
     ["combinesmg"] = Mob.new("SMG", {"npc_combinesmg"}, 1),
@@ -837,9 +848,11 @@ mobs[2] = {
     ["doublestun"] = Mob.new("Stop Resisting (x2)", {"npc_stun"}, 2, 0.75),
     ["triplemanhack"] = Mob.new("Manhack (x3)", {"npc_manhack"}, 3, 0.3, ManhackSpawn),
     ["doublerollermine"] = Mob.new("Rollermine (x2)", {"npc_rollermine"}, 2, 0.5, RollermineSpawn)
+
 }
 
 mobs[3] = {
+
     ["rocket"] = Mob.new("Rocketeer", {"npc_rocket"}, 1),
     ["barney"] = Mob.new("Barney", {"npc_barney"}, 1),
     ["vort"] = Mob.new("Vortigaunt", {"npc_vort"}, 1),
@@ -852,9 +865,11 @@ mobs[3] = {
     ["triplerollermine"] = Mob.new("Rollermine (x3)", {"npc_rollermine"}, 3, 0.5, RollermineSpawn),
     ["stalker"] = Mob.new("Stalker", {"npc_stalker"}, 1, 1, StalkerSpawn),
     ["grenadier"] = Mob.new("Grenadier", {"not_used"}, 1, 1, GrenadierSpawn)
+
 }
 
 mobs[4] = {
+
     ["doublerocket"] = Mob.new("Rocketeer (x2)", {"npc_rocket"}, 2),
     ["quinzombie"] = Mob.new("Zombie (x5)", {"npc_zombie"}, 5, 0.5),
     ["antguard"] = Mob.new("Antlion Guard", {"npc_antguard"}, 1, 1, AntlionGuardSpawn),
@@ -869,21 +884,33 @@ mobs[4] = {
     ["doublegrenadier"] = Mob.new("Grenadier (x2)", {"not_used"}, 2, 1, GrenadierSpawn),
     ["aegisshieldunit"] = Mob.new("Aegis Shield Unit", {"not_used"}, 1, 1, AegisShieldUnitSpawn)
 
-}
 
+}
+--mobs[2]["acidspitter"] = Mob.new("Acid Spitter", {"not_used"}, 1, 1, AcidSpitterSpawn)
+--mobs[3]["doubleacidspitter"] = Mob.new("Acid Spitter (x2)", {"not_used"}, 2, 1, AcidSpitterSpawn)
+--mobs[4]["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.8, AcidSpitterSpawn)
+
+--mobs[3]["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
+--mobs[4]["doublehunter"] = Mob.new("Hunter (x2)", {"not_used"}, 2, 1, HunterSpawn)
+
+--mobs[3]["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
+--mobs[1]["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
 cvars.AddChangeCallback("sts_episodic_content", function(convarName, valueOld, valueNew)
-    if valueNew == 1 then
+    
+    if valueNew == "1" then
         -- I think acid spitters explode on death, resulting in them killing other acidspitters/team mates
         -- Disable friendly fire to avoid this, or I could add something to set m_bDontExplode save value to false when they're about to die
         mobs[2]["acidspitter"] = Mob.new("Acid Spitter", {"not_used"}, 1, 1, AcidSpitterSpawn)
-        mobs[3]["doubleacidspitter"] = Mob.new("Acid Spitter (x2)", {"not_used"}, 2, 0.8, AcidSpitterSpawn)
-        mobs[4]["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.6, AcidSpitterSpawn)
+        mobs[3]["doubleacidspitter"] = Mob.new("Acid Spitter (x2)", {"not_used"}, 2, 1, AcidSpitterSpawn)
+        mobs[4]["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.8, AcidSpitterSpawn)
 
         mobs[3]["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
         mobs[4]["doublehunter"] = Mob.new("Hunter (x2)", {"not_used"}, 2, 1, HunterSpawn)
 
         mobs[3]["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
         mobs[1]["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
+        print("Mobs table changed:")
+        --print(SERVER and "server" or "client")
     end
 
     if valueNew == 0 then
@@ -897,6 +924,7 @@ cvars.AddChangeCallback("sts_episodic_content", function(convarName, valueOld, v
         mobs[3]["brute"] = nil
         mobs[1]["fasttorso"] = nil
     end
+    
 end)
 
 function enableWallhacks()
