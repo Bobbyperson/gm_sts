@@ -107,5 +107,3 @@ concommand.Add("reset_game_solo", function(ply, cmd, args)
         print("Either you are not alone or the game has not started.")
     end
 end)
-
-concommand.Add("nofriendlyfire", function(ply, cmd, args) ToggleTeamDamage(tobool(args[1])) end, nil, nil, FCVAR_CHEAT)

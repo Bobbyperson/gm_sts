@@ -18,6 +18,7 @@ CreateConVar("sts_winner_points", "6", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_N
 CreateConVar("sts_loser_points", "5", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Determine point reward for losing a round.", 1, 100)
 CreateConVar("sts_sudden_death", "1", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Determine if sudden death should be enabled.", 0, 1)
 CreateConVar("sts_sudden_death_time", "120", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Determine time until sudden death should begin.", 1, 600)
+CreateConVar("sts_friendly_fire", "1", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "0 - No team damage\n1 - Team damage enabled", 0, 1)
 RunConsoleCommand("sv_gravity", "600") -- reset gravity
 RunConsoleCommand("sk_combine_s_kick", "6") -- change combine melee damage
 RunConsoleCommand("sbox_noclip", "0")
@@ -143,4 +144,8 @@ cvars.AddChangeCallback("sts_forbid_dev_room", function(convarName, valueOld, va
             end
         end
     end
+end)
+
+cvars.AddChangeCallback("sts_friendly_fire", function(convarName, valueOld, valueNew)
+    ToggleTeamDamage(tobool(tonumber(valueNew)))
 end)
