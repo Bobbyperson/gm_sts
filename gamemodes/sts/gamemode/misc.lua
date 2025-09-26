@@ -4,7 +4,6 @@ CreateConVar("sts_minimum_players", "2", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR
 CreateConVar("sts_outfitter_support", "0", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Change how team recognition is handled if using outfitter.", 0, 1)
 CreateConVar("sts_forbid_dev_room", "1", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Whether or not to forbid access to the secret dev room.", 0, 1)
 CreateConVar("sts_disable_settings_buttons", "0", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Whether or not the lobby buttons should do anything.", 0, 1)
-CreateConVar("sts_episodic_content", "0", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Whether or not to add episodic mobs to the mob pool.", 0, 1)
 CreateConVar("sts_force_bonus_rounds", "0", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "1 - Force bonus rounds on\n0 - Force Nothing\n-1 - Force bonus rounds off.", -1, 1)
 CreateConVar("sts_random_teams", "0", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "0 - Allow players to choose teams\n1 - Random two teams\n2 - Random Four teams\nIf this is set to anything besides 0, the team selection will be locked. No effect after game start.", 0, 2)
 CreateConVar("sts_allow_team_swapping", "0", {FCVAR_GAMEDLL, FCVAR_REPLICATED, FCVAR_NOTIFY}, "0 - Do not allow swapping teams midgame\n 1 - Allow swapping teams mid game", 0, 1)

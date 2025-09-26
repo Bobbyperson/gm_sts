@@ -814,7 +814,6 @@ local function ManhackSpawn(teamID, delay, pos)
     end)
 end
 mobs[1] = {
-    
     ["headcrab"] = Mob.new("Headcrab", {"npc_headcrab"}, 1, 1),
     ["blackheadcrab"] = Mob.new("Black Headcrab", {"npc_blackheadcrab"}, 1),
     ["fastheadcrab"] = Mob.new("Fast Headcrab", {"npc_fastheadcrab"}, 1),
@@ -822,22 +821,11 @@ mobs[1] = {
     ["crowbar"] = Mob.new("Crowbar Guy", {"npc_crowbar"}, 1),
     ["stun"] = Mob.new("Stop Resisting", {"npc_stun"}, 1),
     ["torso"] = Mob.new("Zombie Torso", {"npc_torso"}, 1),
-    ["rollermine"] = Mob.new("Rollermine", {"not_used"}, 1, 0.5, RollermineSpawn)
-    
-
-    -- These are only here for debugging
-   -- ["stalker"] = Mob.new("Stalker", {"not_used"}, 1, 1, StalkerSpawn)
-   --["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn),
-   -- ["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.6, AcidSpitterSpawn)
-  -- ["combinesmg"] = Mob.new("SMG", {"npc_combinesmg"}, 1)
-    --["rocket"] = Mob.new("Rocketeer", {"npc_rocket"}, 1)
-    --["sniper"] = Mob.new("Combine Sniper", {"not_used"}, 1, 1, CombineSniperSpawn),
-    --["grenadier"] = Mob.new("Grenadier", {"not_used"}, 1, 1, GrenadierSpawn)
-    --["aegisshieldunit"] = Mob.new("Aegis Shield Unit", {"not_used"}, 1, 1, AegisShieldUnitSpawn)
+    ["rollermine"] = Mob.new("Rollermine", {"not_used"}, 1, 0.5, RollermineSpawn),
+    ["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
 }
 
 mobs[2] = {
-
     ["medic"] = Mob.new("Medic", {"npc_medic"}, 1),
     ["shotgun"] = Mob.new("Shotgun", {"npc_shotgun"}, 1),
     ["combinesmg"] = Mob.new("SMG", {"npc_combinesmg"}, 1),
@@ -847,12 +835,11 @@ mobs[2] = {
     ["triplefastheadcrab"] = Mob.new("Fast Headcrab (x3)", {"npc_fastheadcrab"}, 3, 0.5),
     ["doublestun"] = Mob.new("Stop Resisting (x2)", {"npc_stun"}, 2, 0.75),
     ["triplemanhack"] = Mob.new("Manhack (x3)", {"npc_manhack"}, 3, 0.3, ManhackSpawn),
-    ["doublerollermine"] = Mob.new("Rollermine (x2)", {"npc_rollermine"}, 2, 0.5, RollermineSpawn)
-
+    ["doublerollermine"] = Mob.new("Rollermine (x2)", {"npc_rollermine"}, 2, 0.5, RollermineSpawn),
+    ["acidspitter"] = Mob.new("Acid Spitter", {"not_used"}, 1, 1, AcidSpitterSpawn)
 }
 
 mobs[3] = {
-
     ["rocket"] = Mob.new("Rocketeer", {"npc_rocket"}, 1),
     ["barney"] = Mob.new("Barney", {"npc_barney"}, 1),
     ["vort"] = Mob.new("Vortigaunt", {"npc_vort"}, 1),
@@ -864,12 +851,12 @@ mobs[3] = {
     ["sniper"] = Mob.new("Combine Sniper", {"npc_sniper"}, 1, 1, CombineSniperSpawn),
     ["triplerollermine"] = Mob.new("Rollermine (x3)", {"npc_rollermine"}, 3, 0.5, RollermineSpawn),
     ["stalker"] = Mob.new("Stalker", {"npc_stalker"}, 1, 1, StalkerSpawn),
-    ["grenadier"] = Mob.new("Grenadier", {"not_used"}, 1, 1, GrenadierSpawn)
-
+    ["grenadier"] = Mob.new("Grenadier", {"not_used"}, 1, 1, GrenadierSpawn),
+    ["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
+    ["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
 }
 
 mobs[4] = {
-
     ["doublerocket"] = Mob.new("Rocketeer (x2)", {"npc_rocket"}, 2),
     ["quinzombie"] = Mob.new("Zombie (x5)", {"npc_zombie"}, 5, 0.5),
     ["antguard"] = Mob.new("Antlion Guard", {"npc_antguard"}, 1, 1, AntlionGuardSpawn),
@@ -882,50 +869,10 @@ mobs[4] = {
     ["quinrollermine"] = Mob.new("Rollermine (x5)", {"npc_rollermine"}, 5, 0.4, RollermineSpawn),
     ["doublestalker"] = Mob.new("Stalker (x2)", {"npc_stalker"}, 2, 1, StalkerSpawn),
     ["doublegrenadier"] = Mob.new("Grenadier (x2)", {"not_used"}, 2, 1, GrenadierSpawn),
-    ["aegisshieldunit"] = Mob.new("Aegis Shield Unit", {"not_used"}, 1, 1, AegisShieldUnitSpawn)
-
-
+    ["aegisshieldunit"] = Mob.new("Aegis Shield Unit", {"not_used"}, 1, 1, AegisShieldUnitSpawn),
+    ["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.8, AcidSpitterSpawn),
+    ["doublehunter"] = Mob.new("Hunter (x2)", {"not_used"}, 2, 1, HunterSpawn)
 }
---mobs[2]["acidspitter"] = Mob.new("Acid Spitter", {"not_used"}, 1, 1, AcidSpitterSpawn)
---mobs[3]["doubleacidspitter"] = Mob.new("Acid Spitter (x2)", {"not_used"}, 2, 1, AcidSpitterSpawn)
---mobs[4]["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.8, AcidSpitterSpawn)
-
---mobs[3]["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
---mobs[4]["doublehunter"] = Mob.new("Hunter (x2)", {"not_used"}, 2, 1, HunterSpawn)
-
---mobs[3]["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
---mobs[1]["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
-cvars.AddChangeCallback("sts_episodic_content", function(convarName, valueOld, valueNew)
-    
-    if valueNew == "1" then
-        -- I think acid spitters explode on death, resulting in them killing other acidspitters/team mates
-        -- Disable friendly fire to avoid this, or I could add something to set m_bDontExplode save value to false when they're about to die
-        mobs[2]["acidspitter"] = Mob.new("Acid Spitter", {"not_used"}, 1, 1, AcidSpitterSpawn)
-        mobs[3]["doubleacidspitter"] = Mob.new("Acid Spitter (x2)", {"not_used"}, 2, 1, AcidSpitterSpawn)
-        mobs[4]["quadacidspitter"] = Mob.new("Acid Spitter (x4)", {"not_used"}, 4, 0.8, AcidSpitterSpawn)
-
-        mobs[3]["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
-        mobs[4]["doublehunter"] = Mob.new("Hunter (x2)", {"not_used"}, 2, 1, HunterSpawn)
-
-        mobs[3]["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
-        mobs[1]["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
-        print("Mobs table changed:")
-        --print(SERVER and "server" or "client")
-    end
-
-    if valueNew == 0 then
-        mobs[2]["acidspitter"] = nil
-        mobs[3]["doubleacidspitter"] = nil
-        mobs[4]["quadacidspitter"] = nil
-
-        mobs[3]["hunter"] = nil
-        mobs[4]["doublehunter"] = nil
-
-        mobs[3]["brute"] = nil
-        mobs[1]["fasttorso"] = nil
-    end
-    
-end)
 
 function enableWallhacks()
     hook.Add("PreDrawHalos", "GiveNPCsOutlines", function()
