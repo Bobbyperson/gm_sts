@@ -187,8 +187,7 @@ if CLIENT then
     end)
 end
 if SERVER then
-    -- I dont have half life 2 'officially' installed but I have the content files, and for some reason this would cause errors with the death notices or something
-    -- this fixes that issue
+    -- TODO: Check if actually needed (gmod content update)
     hook.Add("Initialize", "RegisterAntlionWorker", function()
         local npcList = list.GetForEdit("NPC")
         
