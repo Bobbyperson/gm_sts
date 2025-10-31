@@ -50,6 +50,7 @@ if SERVER then
         net.WriteInt(box.strength, 4)
         net.WriteInt(box.level, 4)
         net.WriteString(box.key)
+
         net.Send(player)
     end
 end
@@ -171,4 +172,30 @@ end
 if CLIENT then
     net.Receive("Wallhacks", function() enableWallhacks() end)
     net.Receive("DisableWallhacks", function() disableWallhacks() end)
+end
+
+
+if SERVER then
+    util.AddNetworkString("ShieldHitEffect")
+end
+if CLIENT then
+    net.Receive("ShieldHitEffect", function()
+    local pos = net.ReadVector()
+    local ed = EffectData()
+    ed:SetOrigin(pos)
+    util.Effect("cball_bounce", ed)
+    end)
+end
+if SERVER then
+    -- TODO: Check if actually needed (gmod content update)
+    hook.Add("Initialize", "RegisterAntlionWorker", function()
+        local npcList = list.GetForEdit("NPC")
+
+        npcList["npc_antlion_worker"] = {
+            Name = "Antlion Worker",
+            Class = "npc_antlion_worker",
+            Category = "Half-Life 2"
+        }
+        print("Registered npc_antlion_worker in NPC list")
+    end)
 end

@@ -18,7 +18,6 @@ teams[1] = {
     },
     points = 0
 }
-
 team.SetColor(1, Color(51, 51, 255, 255))
 teams[2] = {
     name = "Red",

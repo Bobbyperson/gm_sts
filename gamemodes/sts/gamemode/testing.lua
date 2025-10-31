@@ -41,6 +41,7 @@
     for _, id in pairs(teamsToSpawn) do
         for i = 1, 4 do
             local level = math.random(1, 4)
+
             local keys = {}
             -- get keys of mobs[level]
             for key, _ in pairs(mobs[level]) do
@@ -55,18 +56,75 @@
                 ["mob"] = mobs[level][chosenmob],
                 ["key"] = chosenmob,
                 ["multipler"] = 1,
-                ["strength"] = math.random(1, 4)
+                ["strength"] = 4
             })
         end
     end
 
+    local spawn_point
+    for _, ent in ipairs(ents.FindByClass("info_target")) do
+        if ent:GetName() == "spawn_room_marker" then
+            spawn_point = ent
+        end
+    end
+
+    for _, id in pairs(teamsToSpawn) do
+        -- for every spawner in each team
+        for _, spawner in ipairs(teams[id].spawners) do
+            if spawner[1] == nil then continue end
+            -- Check if mob has spawn function
+            if spawner[1].mob.spawnfunc == nil then
+                if teamMobs[id] == nil then
+                    teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
+                else
+                    print("Adding regular mobs")
+                    TableConcat(teamMobs[id], spawner[1].mob:getSpawns(id, spawner[1].strength))
+                end
+            else
+                print("Spawnfunc found! Adding " .. spawner[1].mob.name .. " to teamMobs table")
+                -- I found theres gotta be some delay when using the AttachTeamIndicators function...or else...
+                -- 
+                local newtable = {spawner[1].mob, id, spawner[1].strength, spawn_point:GetPos()}
+                if teamMobs[id] == nil then
+                    teamMobs[id] = {newtable}
+                else
+                    table.insert(teamMobs[id], newtable)
+                end
+            end
+        end
+    end
+
+
+    for i, coolmobs in pairs(teamMobs) do
+        delay = 0
+        for _, mob in ipairs(coolmobs) do
+            if getmetatable(mob[1]) == Mob then
+                for _ = 1, mob[3] * mob[1].multiplier do
+                    delay = delay + mob[1].delay
+                    mob[1].spawnfunc(mob[2], delay, spawn_point:GetPos())
+                end
+            else
+                PrintTable(mob)
+                delay = delay + mob[2]
+                timer.Simple(delay, function() mob[1]:Fire("ForceSpawn") end)
+            end
+        end
+
+        if delay > largestDelay then largestDelay = delay end
+    end
+    --[[
     for _, id in pairs(teamsToSpawn) do
         PrintTable(teams[id].spawners)
         for _, spawner in ipairs(teams[id].spawners) do
-            if teamMobs[id] == nil then
-                teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
-            else
-                TableConcat(teamMobs[id], spawner[1].mob:getSpawns(id, spawner[1].strength))
+            if spawner[1].mob.spawnfunc == nil then
+                if teamMobs[id] == nil then
+                    teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
+                else
+                    TableConcat(teamMobs[id], spawner[1].mob:getSpawns(id, spawner[1].strength))
+                end
+            else   
+                print("Spawning " .. spawner[1].mob.name .. "using it's spawnfunction")
+                spawner[1].mob.spawnfunc(id, spawner[1].strength, spawn_point:GetPos())
             end
         end
     end
@@ -84,7 +142,7 @@
 
         if delay > largestDelay then largestDelay = delay end
     end
-
+    ]]--
     local alive = {}
     for _, id in pairs(teamsToSpawn) do
         if id == 1 then

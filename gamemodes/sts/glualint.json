@@ -1,3 +1,4 @@
 {
-    "lint_maxScopeDepth": 9
+    "lint_maxScopeDepth": 9,
+    "lint_syntaxErrors": true
 }
