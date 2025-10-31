@@ -2,7 +2,7 @@ AddCSLuaFile()
 ENT.Base = "base_anim"
 ENT.Type = "anim"
 ENT.PrintName = "Bubble Shield"
-ENT.Spawnable = true 
+ENT.Spawnable = true
 
 
 

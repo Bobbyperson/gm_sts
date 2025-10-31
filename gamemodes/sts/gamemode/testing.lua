@@ -41,7 +41,7 @@
     for _, id in pairs(teamsToSpawn) do
         for i = 1, 4 do
             local level = math.random(1, 4)
-         
+
             local keys = {}
             -- get keys of mobs[level]
             for key, _ in pairs(mobs[level]) do
@@ -69,16 +69,12 @@
     end
 
     for _, id in pairs(teamsToSpawn) do
-        
         -- for every spawner in each team
         for _, spawner in ipairs(teams[id].spawners) do
-
             if spawner[1] == nil then continue end
             -- Check if mob has spawn function
             if spawner[1].mob.spawnfunc == nil then
-            
                 if teamMobs[id] == nil then
-                
                     teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
                 else
                     print("Adding regular mobs")
@@ -89,7 +85,7 @@
                 -- I found theres gotta be some delay when using the AttachTeamIndicators function...or else...
                 -- 
                 local newtable = {spawner[1].mob, id, spawner[1].strength, spawn_point:GetPos()}
-                if teamMobs[id] == nil then 
+                if teamMobs[id] == nil then
                     teamMobs[id] = {newtable}
                 else
                     table.insert(teamMobs[id], newtable)
@@ -97,16 +93,13 @@
             end
         end
     end
-    
 
-    for i, mobs in pairs(teamMobs) do
+
+    for i, coolmobs in pairs(teamMobs) do
         delay = 0
-        
-        for _, mob in ipairs(mobs) do
-           
-            
+        for _, mob in ipairs(coolmobs) do
             if getmetatable(mob[1]) == Mob then
-                for i = 1, mob[3] * mob[1].multiplier do
+                for _ = 1, mob[3] * mob[1].multiplier do
                     delay = delay + mob[1].delay
                     mob[1].spawnfunc(mob[2], delay, spawn_point:GetPos())
                 end
@@ -115,9 +108,6 @@
                 delay = delay + mob[2]
                 timer.Simple(delay, function() mob[1]:Fire("ForceSpawn") end)
             end
-
-
-            
         end
 
         if delay > largestDelay then largestDelay = delay end

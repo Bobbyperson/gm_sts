@@ -48,18 +48,15 @@ local function FindNearestEnemy(npc, radius)
     local nearest = nil
     local minDistSqr = math.huge
     for _, ent in ipairs(ents.FindInSphere(npc:GetPos(), radius)) do
-        if IsValid(ent) and ent:IsNPC() then
-            if npc:Disposition(ent) == D_HT then
-                local distSqr = npc:GetPos():DistToSqr(ent:GetPos())
-                if distSqr < minDistSqr then
-                    nearest = ent
-                    minDistSqr = distSqr
-                end
-            end
+        if IsValid(ent) and ent:IsNPC()
+        and npc:Disposition(ent) == D_HT
+        and npc:GetPos():DistToSqr(ent:GetPos()) < minDistSqr then
+            nearest = ent
+            minDistSqr = distSqr
         end
     end
     if nearest == nil then
-        print("FindNearestEnemy couldn't find nearest! Probably no enemys in range")
+        print("FindNearestEnemy couldn't find nearest! Probably no enemies in range")
         return
     end
     return nearest
@@ -80,10 +77,8 @@ function ToggleTeamDamage(inputbool)
             return
         end
     else
-        if hook.GetTable().EntityTakeDamage then
-            if hook.GetTable().EntityTakeDamage.DisableFriendlyFire then
-                hook.Remove("EntityTakeDamage", "DisableFriendlyFire")
-            end
+        if hook.GetTable().EntityTakeDamage and hook.GetTable().EntityTakeDamage.DisableFriendlyFire then
+            hook.Remove("EntityTakeDamage", "DisableFriendlyFire")
         end
     end
 end
@@ -96,9 +91,8 @@ hook.Add("OnEntityCreated", "TeamIndicatorCatcherHook", function(ent)
             return
         end
         -- Gotta wait for indicator to be created (or something idk it just works)
-        timer.Simple(1/66, function()
+        timer.Simple(1 / 66, function()
             if IsValid(ent) and ent.GetName and string.find(ent:GetName(), "cloned_indicator") then
-                
                 local targetQueueEntry = teamIndicatorQueue[1]
                 if IsValid(targetQueueEntry[1]) then
                     ent:SetPos(targetQueueEntry[1]:GetPos())
@@ -196,17 +190,17 @@ function attachTeamIndicator(npc, teamID)
 
 
 ---------------------------------------------------------------------START OF AEGIS SHIELD UNIT CODE------------------------------------------------------------------------------------
-local function DrawDebugSphere(ent, useBoundingBox, radius, duration, color)
-    if not IsValid(ent) then return end
-    if useBoundingBox == true then
-        local entCenter = ent:OBBCenter()
-        local radius = entCenter:Distance(ent:OBBMaxs())
-    else
-        local radius = radius
-    end
-    local pos = ent:GetPos()
-    debugoverlay.Sphere(pos, radius, duration or 1, color or Color(0, 0, 255, 255), true)
-end
+-- local function DrawDebugSphere(ent, useBoundingBox, radius, duration, color)
+--     if not IsValid(ent) then return end
+--     if useBoundingBox == true then
+--         local entCenter = ent:OBBCenter()
+--         local radius = entCenter:Distance(ent:OBBMaxs())
+--     else
+--         local radius = radius
+--     end
+--     local pos = ent:GetPos()
+--     debugoverlay.Sphere(pos, radius, duration or 1, color or Color(0, 0, 255, 255), true)
+-- end
 
 local function RayIntersectsSphere(rayOrigin, rayDirection, sphereCenter, sphereRadius)
     -- Get the vector from the ray origin to the sphere center
@@ -254,23 +248,21 @@ local function AddShieldBulletHook()
     hook.Add("PostEntityFireBullets", "ShieldBulletFilter", function(attacker, data)
         local bulletstart = data.Trace["StartPos"]
         --using data.Trace["hitpos"] fucks up the intersectRay below for some reason that is beyond me
-        
         local dir = data.Trace["Normal"]:GetNormalized()
         local bulletendpos = bulletstart + (dir * 10000) -- I just randomly picked 10000 as the length, may need to lengthen it idk. 
-        
-       
+
         if #shieldregistry == 0 then
             hook.Remove("PostEntityFireBullets", "ShieldBulletFilter")
             print("No shields in shield registry! Hook removed!")
             return true
         end
-    
+
         local closestShield = {
             dist2 = nil,
             pos = nil,
             indx = nil
-        } 
-         -- I'm iterating through the shield registry backwards to be able to remove any invalid shields
+        }
+        -- I'm iterating through the shield registry backwards to be able to remove any invalid shields
         -- (Note for myself BOT Zach: this is cause removing a table entry while iterating forwards will result in fucky indexing / skipped entries due to the rest of the table shifting after removal)
         -- find closest shield
         for i = #shieldregistry, 1, -1 do
@@ -279,36 +271,36 @@ local function AddShieldBulletHook()
                 table.remove(shieldregistry, i)
                 continue
             end
-            
+
             local vecToShield = shieldregistry[i][1]:GetPos() - bulletstart
             local distToShield = vecToShield:Length()
 
-            local toDirNorm = vecToShield/distToShield
-            
+            local toDirNorm = vecToShield / distToShield
+
             -- Here we check if the bullet's angle comes within a certain threshold to the current shield
             -- If the bullet angle is greater than our threshold, we skip to the next shield to avoid unneccessary calculations
-            
-            local theta = math.atan(shieldRadius/distToShield)
+
+            local theta = math.atan(shieldRadius / distToShield)
             local minDot = math.cos(theta)
-            
+
             --print("Minimum angle:".. tostring(minDot))
             --print("Actual angle dot: " .. tostring(dir:Dot(toDirNorm)))
             if (dir:Dot(toDirNorm)) < minDot then
                 continue
             end
-            
+
             local shieldTeam = shieldregistry[i][2]
             -- if the current shield is friendly to the attacker, skip to the next shield
             if shieldTeam == attacker:GetName() then continue end
-           
-            local result1, result2 = RayIntersectsSphere(bulletstart, dir, shieldregistry[i][1]:GetPos(), shieldRadius)
+
+            local result1, _ = RayIntersectsSphere(bulletstart, dir, shieldregistry[i][1]:GetPos(), shieldRadius)
             -- I dont think result1 should ever be nil here because of the dot product check above, but imma check it anyways
             if result1 == nil then
                 --debugoverlay.Line(bulletstart, bulletendpos, 0.2, Color(255, 0, 0, 255), true)
                 --print("RAY DIDN'T HIT INTERSECT SPHERE") 
-                continue 
+                continue
             end
-            
+
             local intersect1 = bulletstart + dir * result1
             --debugoverlay.Sphere(intersect1, 4, 1, Color(255, 255, 0), true, 1)
             local rayDist = bulletstart:DistToSqr(intersect1)
@@ -316,12 +308,12 @@ local function AddShieldBulletHook()
                 closestShield = {dist2 = rayDist, pos = intersect1, indx = i}
             end
         end
-       
+
         -- if we didnt find any shields, return true and fire the bullet normally
         if closestShield.indx == nil then
             return true
         end
-        
+
         -- gotta check to make sure theres nothing in front of the shield we should hit first
         local tr = util.TraceLine({
             start = bulletstart,
@@ -334,7 +326,7 @@ local function AddShieldBulletHook()
 
         -- if the bullet trace hits an object that is closer than the ray intersect, fire da bullet as normal
         if traceDist < closestShield.dist2 then
-            
+
             --Useful debuging, must have developer = 1 convar set in order to see
             --DrawDebugSphere(shieldregistry[closestShield.indx][1], false, shieldRadius, 1, Color(255, 0, 200))
             --debugoverlay.Line(bulletstart, bulletendpos, 0.2, Color(255, 0, 200), true)
@@ -343,7 +335,7 @@ local function AddShieldBulletHook()
 
         -- if not, return false to cancel da bullet
         -- you know, you'd think that you wouldn't be able to cancel the bullet here in 'PostEntityFireBullets', but you can!
-        
+
         --DrawDebugSphere(shieldregistry[closestShield.indx][1], false, shieldRadius, 1, Color(0, 255, 0, 255))
         --debugoverlay.Line(bulletstart, bulletendpos, 0.2, Color(0, 255, 0, 255), true)
         sound.Play("weapons/fx/rics/ric2.wav", closestShield.pos, 67, math.random(95, 105))
@@ -358,7 +350,7 @@ local function AddShieldBulletHook()
         -- shield health -= damage
         if shieldregistry[closestShield.indx] == nil then
             print("Shield was nil!")
-            return true 
+            return true
         end
         shieldregistry[closestShield.indx][3] = shieldregistry[closestShield.indx][3] - damage
         --print("Shield shot, current health is: " .. shieldregistry[i][3])
@@ -371,7 +363,7 @@ local function AddShieldBulletHook()
 end
 
 local function AegisShieldUnitSpawn(teamID, delay, pos)
-    
+
     timer.Simple(delay, function()
         local combine = ents.Create("npc_combine_s")
         local teamname = getTeamNameFromID(teamID)
@@ -380,7 +372,7 @@ local function AegisShieldUnitSpawn(teamID, delay, pos)
         combine:SetKeyValue("squadname", teamname)
         combine:SetPos(pos)
         combine:Spawn()
-        
+
         local shield = ents.Create("bubble_shield")
         shield:SetPos(combine:GetPos())
         shield:SetParent(combine)
@@ -395,13 +387,11 @@ local function AegisShieldUnitSpawn(teamID, delay, pos)
             AddShieldBulletHook()
         end
     end)
-    
 end
 
 ------------------------------------------------------------------END OF AEGIS SHIELD UNIT CODE-------------------------------------------------------------------------------------
 
 local function RollermineSpawn(teamID, delay, pos)
-    
     timer.Simple(delay, function()
         local rollermine = ents.Create("npc_rollermine")
         local teamname = getTeamNameFromID(teamID)
@@ -416,7 +406,6 @@ local function RollermineSpawn(teamID, delay, pos)
         rollermine:SetMaxLookDistance(6000)
         rollermine:Spawn()
         local minehealth = 20
-        
 
         -- rollermines tend to bounce around alot, and so on the "dont look up" map they can get out of bounds frequently
         local timeTilAutoKill = 90
@@ -443,7 +432,6 @@ local function RollermineSpawn(teamID, delay, pos)
                     rollermine:UpdateEnemyMemory(nearest, nearest:GetPos())
                 end
                 rollermine:SetSchedule(SCHED_CHASE_ENEMY)
-                
             else
                 timer.Remove(timername)
             end
@@ -455,9 +443,8 @@ local function RollermineSpawn(teamID, delay, pos)
             end
             if ent == rollermine then
                 minehealth = minehealth - dmginfo:GetDamage()
-                
                 if minehealth <= 0 then
-                    hook.Remove("EntityTakeDamage", "RollermineDamageHook_".. rollermine:EntIndex())
+                    hook.Remove("EntityTakeDamage", "RollermineDamageHook_" .. rollermine:EntIndex())
                     local killattack = DamageInfo()
                     killattack:SetDamage(9999)
                     killattack:SetAttacker(game.GetWorld())
@@ -467,9 +454,9 @@ local function RollermineSpawn(teamID, delay, pos)
                     killattack:SetDamageForce(Vector(0,0,0))
                     rollermine:TakeDamageInfo(killattack)
                 end
-            end     
+            end
         end)
-    end) 
+    end)
 end
 
 local function CombineSniperSpawn(teamID, delay, pos)
@@ -477,7 +464,7 @@ local function CombineSniperSpawn(teamID, delay, pos)
         local sniper_mount = ents.Create("npc_citizen")
         local sniper = ents.Create("npc_sniper")
         local teamname = getTeamNameFromID(teamID)
-        if IsValid(sniper) && IsValid(sniper_mount) then
+        if IsValid(sniper) and IsValid(sniper_mount) then
             sniper:SetKeyValue("squadname", teamname)
             sniper:SetPos(pos)
             sniper:SetName(teamname .. "team")
@@ -500,7 +487,7 @@ local function CombineSniperSpawn(teamID, delay, pos)
             -- sniper is not parented to it's mount because (i think) it would get pushed by the map spawn push trigger away from its parent, resulting in quite a large
             -- offset from where the sniper and its mount are
             local mountTimerName = "MountTimer_" .. sniper:EntIndex()
-            timer.Create(mountTimerName, 1/66, 0, function()
+            timer.Create(mountTimerName, 1 / 66, 0, function()
                 if IsValid(sniper) and  IsValid(sniper_mount) then
                     sniper:SetPos(sniper_mount:GetPos())
                     sniper:SetAngles(sniper_mount:GetAngles())
@@ -510,12 +497,11 @@ local function CombineSniperSpawn(teamID, delay, pos)
                 end
             end)
             local sniperhealth = sniper:Health()
-            hook.Add("EntityTakeDamage", "SniperDamageHook_".. sniper:EntIndex(), function(ent, dmginfo)
+            hook.Add("EntityTakeDamage", "SniperDamageHook_" .. sniper:EntIndex(), function(ent, dmginfo)
                 if ent == sniper then
-                    
                     sniperhealth = sniperhealth - dmginfo:GetDamage()
-                    if sniperhealth<= 0 then
-                        hook.Remove("EntityTakeDamage", "SniperDamageHook_".. sniper:EntIndex())
+                    if sniperhealth <= 0 then
+                        hook.Remove("EntityTakeDamage", "SniperDamageHook_" .. sniper:EntIndex())
                         local killattack = DamageInfo()
                         if not IsValid(sniper_mount) then return end
                         killattack:SetDamage(9999)
@@ -558,17 +544,14 @@ local function StalkerSpawn(teamID, delay, pos)
                 -- maybe not getting the save table at all would be more efficient...
 
                 local save_table = stalker:GetSaveTable()
-                
                 -- Check if the beam is active
                 if save_table.m_pBeam then
                     -- Get the current enemy
                     local enemy = stalker:GetEnemy()
-                    
                     -- Make sure the enemy is valid
                     if IsValid(enemy) then
                         -- Set the laser target to the enemy's OBB center
                         local target_pos = enemy:OBBCenter()
-                        
                         stalker:SetSaveValue("m_vLaserTargetPos", enemy:GetPos() + target_pos)
                     end
                 end
@@ -576,7 +559,6 @@ local function StalkerSpawn(teamID, delay, pos)
                 timer.Remove(timername)
             end
         end)
-       
     end)
 end
 -------------------------------------------------------------GRENADIER UNIT CODE START-------------------------------------------------------------------
@@ -604,7 +586,7 @@ function throwGrenadeAtEnemy(ent)
         --print("Grenade target name: " .. grenadetarget:GetName())
         grenadetarget:Spawn()
         timer.Simple(0.1, function()
-            if !IsValid(grenadetarget) or !IsValid(ent) then return end
+            if not IsValid(grenadetarget) or not IsValid(ent) then return end
             ent:Input("ThrowGrenadeAtTarget", world, world, grenadetarget:GetName())
             timer.Simple(1, function()
                 --print(grenadetarget:GetName() .. " removed!")
@@ -625,7 +607,6 @@ local function GrenadierSpawn(teamID, delay, pos)
         combineunit:SetKeyValue("squadname", teamname)
         combineunit:AddSpawnFlags(SF_NPC_NO_WEAPON_DROP)
         combineunit:Spawn()
-        
         timer.Simple(0.2, function()
             AttachTeamIndicator(combineunit, teamID, 80)
         end)
@@ -639,13 +620,12 @@ local function GrenadierSpawn(teamID, delay, pos)
         grenadierhead:FollowBone(combineunit, 14)
         local ammoStripTimerName = "AmmoStripTimer_" .. combineunit:EntIndex()
         timer.Create(ammoStripTimerName, 0.2, 0, function()
-            
-            if !IsValid(combineunit) then
+            if not IsValid(combineunit) then
                 timer.Remove("ammostriptimer_")
                 return
             end
             local weapon = combineunit:GetActiveWeapon()
-            if !IsValid(weapon) then
+            if not IsValid(weapon) then
                 timer.Remove(ammoStripTimerName)
                 return
             end
@@ -655,13 +635,11 @@ local function GrenadierSpawn(teamID, delay, pos)
         local throwNadeTimerName = "CombineThrowNades_" .. combineunit:EntIndex()
         timer.Create(throwNadeTimerName, 3, 0, function()
             if IsValid(combineunit) then
-                
                 local currentEnemy = combineunit:GetEnemy()
                 if not IsValid(currentEnemy) then
                     currentEnemy = FindNearestEnemy(combineunit, 6000)
                 end
                 if IsValid(currentEnemy) then
-                    
                     local distance = 900
                     distance = distance * distance
                     if combineunit:GetPos():DistToSqr(currentEnemy:GetPos()) > distance then
@@ -683,18 +661,13 @@ local function GrenadierSpawn(teamID, delay, pos)
         hook.Add("Think", grenadierThinkHookName , function()
             if IsValid(combineunit) and IsValid(combineunit:GetActiveWeapon()) then
                 local sched = combineunit:GetCurrentSchedule()
-                
                 if sched == SCHED_HIDE_AND_RELOAD or sched == SCHED_RELOAD or sched == 200 then
-            
                     combineunit:SetSchedule(SCHED_FAIL) -- Or SCHED_ALERT_FACE
                 end
-                
             else
                 hook.Remove("Think", grenadierThinkHookName)
             end
-            
         end)
-        
     end)
 end
 
@@ -737,12 +710,8 @@ local function HunterSpawn(teamID, delay, pos)
             AttachTeamIndicator(hunter, teamID, 120)
         end)
         local hunterHealth = 90
-        
-        
-        local hunterHookName = "HunterHook_".. hunter:EntIndex()
-        
+        local hunterHookName = "HunterHook_" .. hunter:EntIndex()
         hook.Add("EntityTakeDamage", hunterHookName, function(ent, dmginfo)
-            
             if ent == hunter then
                 hunterHealth = hunterHealth - dmginfo:GetDamage()
                 if hunterHealth <= 0 then
@@ -809,8 +778,6 @@ local function ManhackSpawn(teamID, delay, pos)
                 manhack:TakeDamageInfo(killattack)
             end
         end)
-    
-    
     end)
 end
 mobs[1] = {
@@ -852,7 +819,7 @@ mobs[3] = {
     ["triplerollermine"] = Mob.new("Rollermine (x3)", {"npc_rollermine"}, 3, 0.5, RollermineSpawn),
     ["stalker"] = Mob.new("Stalker", {"npc_stalker"}, 1, 1, StalkerSpawn),
     ["grenadier"] = Mob.new("Grenadier", {"not_used"}, 1, 1, GrenadierSpawn),
-    ["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
+    ["brute"] = Mob.new("Brute", {"npc_brute"}, 1),
     ["hunter"] = Mob.new("Hunter", {"not_used"}, 1, 1, HunterSpawn)
 }
 

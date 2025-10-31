@@ -50,7 +50,7 @@ if SERVER then
         net.WriteInt(box.strength, 4)
         net.WriteInt(box.level, 4)
         net.WriteString(box.key)
-        
+
         net.Send(player)
     end
 end
@@ -190,7 +190,7 @@ if SERVER then
     -- TODO: Check if actually needed (gmod content update)
     hook.Add("Initialize", "RegisterAntlionWorker", function()
         local npcList = list.GetForEdit("NPC")
-        
+
         npcList["npc_antlion_worker"] = {
             Name = "Antlion Worker",
             Class = "npc_antlion_worker",

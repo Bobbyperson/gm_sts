@@ -1003,8 +1003,7 @@ function beginFight()
             break
         end
     end
- for _, id in pairs(teamsToSpawn) do
-        
+    for _, id in pairs(teamsToSpawn) do
         -- for every spawner in each team
         for _, spawner in ipairs(teams[id].spawners) do
 
@@ -1014,12 +1013,11 @@ function beginFight()
 
                 --print("Spawnfunc found! Adding " .. spawner[1].mob.name .. " to teamMobs table")
                 local newtable = {spawner[1].mob, id, spawner[1].strength, spawn_point:GetPos()}
-                if teamMobs[id] == nil then 
+                if teamMobs[id] == nil then
                     teamMobs[id] = {newtable}
                 else
                     table.insert(teamMobs[id], newtable)
                 end
-                
             else
 
                 if teamMobs[id] == nil then
@@ -1033,16 +1031,12 @@ function beginFight()
             end
         end
     end
-    
 
     for i, mobs in pairs(teamMobs) do
         delay = 0
-        
         for _, mob in ipairs(mobs) do
-           
-            
             if getmetatable(mob[1]) == Mob then
-                for i = 1, mob[3] * mob[1].multiplier do
+                for _ = 1, mob[3] * mob[1].multiplier do
                     delay = delay + mob[1].delay
                     mob[1].spawnfunc(mob[2], delay, spawn_point:GetPos())
                 end
@@ -1050,11 +1044,7 @@ function beginFight()
                 delay = delay + mob[2]
                 timer.Simple(delay, function() mob[1]:Fire("ForceSpawn") end)
             end
-
-
-            
         end
-
         if delay > largestDelay then largestDelay = delay end
     end
 
@@ -1102,7 +1092,6 @@ function beginFight()
             if ent:GetName() == "map_push_yellow" then ent:Fire("Disable") end
         end
     end)
-    
     timer.Simple(delay, function()
         -- PrintMessage(HUD_PRINTTALK, "checking for win")
         if GetConVar("sts_sudden_death"):GetInt() == 1 then
@@ -1111,7 +1100,7 @@ function beginFight()
                 SendServerMessage("Sudden Death has started! Kill all enemy mobs to win!", Color(255, 255, 255), 3)
             end)
         end
-        local haveplayersbeenteleported = false 
+        local haveplayersbeenteleported = false
         timer.Create("CheckForWin", 1, 0, function()
             local alivetimer = table.shallow_copy(alive)
             local amountalive = 0
@@ -1149,7 +1138,6 @@ function beginFight()
                             ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
                             ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
                         end
-                        
                     end
                     enableWallhacksGlobally()
                 end
@@ -1165,7 +1153,7 @@ function beginFight()
                     end
                 end
             end
-            haveplayersbeenteleported = true 
+            haveplayersbeenteleported = true
             if amountalive == 1 then
                 timer.Remove("CheckForWin")
                 timer.Remove("SuddenDeath")
