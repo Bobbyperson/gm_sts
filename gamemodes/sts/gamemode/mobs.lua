@@ -161,7 +161,39 @@ cvars.AddChangeCallback("sts_episodic_content", function(convarName, valueOld, v
     end
 end)
 
-function enableWallhacks()
+function enablePlayerWallhacks()
+    hook.Add("PreDrawHalos", "GivePlayersOutlines", function()
+        local buckets = {
+            red = {},
+            blue = {},
+            yellow = {},
+            green = {},
+            white = {}
+        }
+
+        -- player pass
+        for _, ply in ipairs(player.GetAll()) do
+            local t = ply:Team()
+            if t == 1 then
+                table.insert(buckets.blue, ply)
+            elseif t == 2 then
+                table.insert(buckets.red, ply)
+            elseif t == 3 then
+                table.insert(buckets.green, ply)
+            elseif t == 4 then
+                table.insert(buckets.yellow, ply)
+            end
+        end
+
+        if #buckets.red > 0 then halo.Add(buckets.red, Color(255, 0, 0), 2, 2, 2, true, true) end
+        if #buckets.blue > 0 then halo.Add(buckets.blue, Color(51, 51, 255), 2, 2, 2, true, true) end
+        if #buckets.yellow > 0 then halo.Add(buckets.yellow, Color(255, 255, 0), 2, 2, 2, true, true) end
+        if #buckets.green > 0 then halo.Add(buckets.green, Color(0, 255, 0), 2, 2, 2, true, true) end
+        if #buckets.white > 0 then halo.Add(buckets.white, Color(255, 255, 255), 2, 2, 2, true, true) end
+    end)
+end
+
+function enableNPCWallhacks()
     hook.Add("PreDrawHalos", "GiveNPCsOutlines", function()
         local buckets = {
             red = {},
@@ -188,20 +220,6 @@ function enableWallhacks()
             end
         end
 
-        -- player pass
-        for _, ply in ipairs(player.GetAll()) do
-            local t = ply:Team()
-            if t == 1 then
-                table.insert(buckets.blue, ply)
-            elseif t == 2 then
-                table.insert(buckets.red, ply)
-            elseif t == 3 then
-                table.insert(buckets.green, ply)
-            elseif t == 4 then
-                table.insert(buckets.yellow, ply)
-            end
-        end
-
         if #buckets.red > 0 then halo.Add(buckets.red, Color(255, 0, 0), 2, 2, 2, true, true) end
         if #buckets.blue > 0 then halo.Add(buckets.blue, Color(51, 51, 255), 2, 2, 2, true, true) end
         if #buckets.yellow > 0 then halo.Add(buckets.yellow, Color(255, 255, 0), 2, 2, 2, true, true) end
@@ -210,6 +228,10 @@ function enableWallhacks()
     end)
 end
 
-function disableWallhacks()
+function disableNPCWallhacks()
     hook.Remove("PreDrawHalos", "GiveNPCsOutlines")
+end
+
+function disablePlayerWallhacks()
+    hook.Remove("PreDrawHalos", "GivePlayersOutlines")
 end

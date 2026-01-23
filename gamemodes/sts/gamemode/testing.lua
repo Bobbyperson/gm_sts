@@ -7,6 +7,7 @@
     stopLobbySpawn()
     startGameSpawn()
     setupMap(nextMap)
+    enableNPCWallhacksGlobally()
     local soundTrack
     local suddenDeath = false
     for _, ent in ipairs(ents.GetAll()) do
@@ -176,7 +177,7 @@
                         ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
                     end
 
-                    enableWallhacksGlobally()
+                    enablePlayerWallhacksGlobally()
                 end
 
                 if alivetimer[aliveteam] == 0 and amountalive > 1 then
@@ -219,7 +220,7 @@
                 SendServerMessage(formattedWinner[winner] .. " Team Wins!", winnerColor[winner], 5)
                 playGlobalSound("sts_announcer/" .. winnerShorter[winner] .. "_win" .. math.random(1, 3) .. ".wav")
                 endRound()
-                disableWallhacksGlobally()
+                disablePlayerWallhacksGlobally()
             elseif amountalive == 0 then
                 timer.Remove("CheckForWin")
                 timer.Remove("SuddenDeath")
@@ -232,7 +233,7 @@
                 playGlobalSound("sts_announcer/tie.wav")
                 SendServerMessage("Tie!", Color(255, 255, 255), 3)
                 endRound()
-                disableWallhacksGlobally()
+                disablePlayerWallhacksGlobally()
             end
         end)
     end)

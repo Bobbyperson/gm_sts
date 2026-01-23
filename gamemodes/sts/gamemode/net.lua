@@ -154,21 +154,41 @@ if SERVER then
 end
 
 if CLIENT then net.Receive("UpdateGravity", function() globalGravity = net.ReadFloat() end) end
+
 if SERVER then
-    util.AddNetworkString("Wallhacks")
-    function enableWallhacksGlobally()
-        net.Start("Wallhacks")
+    util.AddNetworkString("PlayerWallhacks")
+    function enablePlayerWallhacksGlobally()
+        net.Start("PlayerWallhacks")
         net.Broadcast()
     end
 
-    util.AddNetworkString("DisableWallhacks")
-    function disableWallhacksGlobally()
-        net.Start("DisableWallhacks")
+    util.AddNetworkString("DisablePlayerWallhacks")
+    function disablePlayerWallhacksGlobally()
+        net.Start("DisablePlayerWallhacks")
         net.Broadcast()
     end
 end
 
 if CLIENT then
-    net.Receive("Wallhacks", function() enableWallhacks() end)
-    net.Receive("DisableWallhacks", function() disableWallhacks() end)
+    net.Receive("PlayerWallhacks", function() enablePlayerWallhacks() end)
+    net.Receive("DisablePlayerWallhacks", function() disablePlayerWallhacks() end)
+end
+
+if SERVER then
+    util.AddNetworkString("NPCWallhacks")
+    function enableNPCWallhacksGlobally()
+        net.Start("NPCWallhacks")
+        net.Broadcast()
+    end
+
+    util.AddNetworkString("DisableNPCWallhacks")
+    function disableNPCWallhacksGlobally()
+        net.Start("DisableNPCWallhacks")
+        net.Broadcast()
+    end
+end
+
+if CLIENT then
+    net.Receive("NPCWallhacks", function() enableNPCWallhacks() end)
+    net.Receive("DisableNPCWallhacks", function() disableNPCWallhacks() end)
 end
