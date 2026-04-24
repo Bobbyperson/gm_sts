@@ -537,9 +537,9 @@ hook.Add("OnNPCKilled", "TrackZombieDeath", function(npc)
             local deadZombiePos = npc:GetPos()
             local deadZombieTeam = npc:GetName()
             -- timer might be necessary as headcrab might not exist on same tick
-            timer.Create("CheckForHeadcrab" .. npc:EntIndex(), 1 / 66, 3, function()
-                -- print("Death headcrab check.")
-                local foundEntities = ents.FindInSphere(deadZombiePos, 100) -- radius needs adjusting
+            local timerName = "CheckForHeadcrab" .. npc:EntIndex()
+            timer.Create(timerName, 1 / 66, 60, function()
+                local foundEntities = ents.FindInSphere(deadZombiePos, 400)
                 for _, ent in pairs(foundEntities) do
                     if (ent:GetClass() == "npc_headcrab" or ent:GetClass() == "npc_headcrab_fast" or ent:GetClass() == "npc_headcrab_black") and ent:GetName() == "" then
                         local teamColors = {
@@ -552,12 +552,10 @@ hook.Add("OnNPCKilled", "TrackZombieDeath", function(npc)
                         ent:SetMaxLookDistance(4000)
                         ent:SetKeyValue("rendercolor", teamColors[deadZombieTeam:lower()])
                         AssignTeam(ent, deadZombieTeam, false)
-                        --ent:SetKeyValue("rendercolor", "255 30 30") -- ! temp
-                        -- PrintMessage(HUD_PRINTTALK, "Assigned headcrab team.")
+                        timer.Remove(timerName)
+                        return
                     end
                 end
-
-                if not npc:IsValid() then timer.Remove("CheckForHeadcrab" .. npc:EntIndex()) end
             end)
         end
     end
@@ -1070,6 +1068,18 @@ function beginFight()
             timer.Create("SuddenDeath", GetConVar("sts_sudden_death_time"):GetInt(), 1, function()
                 suddenDeath = true
                 SendServerMessage("Sudden Death has started! Kill all enemy mobs to win!", Color(255, 255, 255), 3)
+
+                for aliveteam, _ in pairs(alive) do
+                    for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
+                        ply:SetHealth(100)
+                        ply:Give("weapon_pistol")
+                        ply:SetAmmo(1000, "Pistol")
+                        ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
+                        ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
+                    end
+                end
+
+                enablePlayerWallhacksGlobally()
             end)
         end
 
@@ -1100,17 +1110,6 @@ function beginFight()
                             end
                         end
                     end
-
-                    -- teleport all players into arena
-                    for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
-                        ply:SetHealth(100)
-                        ply:Give("weapon_pistol")
-                        ply:SetAmmo(1000, "Pistol")
-                        ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
-                        ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
-                    end
-
-                    enablePlayerWallhacksGlobally()
                 end
 
                 if alivetimer[aliveteam] == 0 and amountalive > 1 then

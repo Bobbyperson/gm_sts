@@ -137,6 +137,18 @@
             timer.Create("SuddenDeath", GetConVar("sts_sudden_death_time"):GetInt(), 1, function()
                 suddenDeath = true
                 SendServerMessage("Sudden Death has started! Kill all enemy mobs to win!", Color(255, 255, 255), 3)
+
+                for aliveteam, _ in pairs(alive) do
+                    for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
+                        ply:SetHealth(100)
+                        ply:Give("weapon_pistol")
+                        ply:SetAmmo(1000, "Pistol")
+                        ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
+                        ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
+                    end
+                end
+
+                enablePlayerWallhacksGlobally()
             end)
         end
 
@@ -167,17 +179,6 @@
                             end
                         end
                     end
-
-                    -- teleport all players into arena
-                    for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
-                        ply:SetHealth(100)
-                        ply:Give("weapon_pistol")
-                        ply:SetAmmo(1000, "Pistol")
-                        ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
-                        ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
-                    end
-
-                    enablePlayerWallhacksGlobally()
                 end
 
                 if alivetimer[aliveteam] == 0 and amountalive > 1 then
@@ -192,7 +193,6 @@
                 end
             end
 
-            suddenDeath = false
             if amountalive == 1 then
                 timer.Remove("CheckForWin")
                 timer.Remove("SuddenDeath")
