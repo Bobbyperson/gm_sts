@@ -13,6 +13,7 @@ function deathmatchKill(victim, inflictor, attacker)
         attacker:PrintMessage(HUD_PRINTTALK, "Quit killing yourself")
     elseif attacker:IsPlayer() then
         local teamnum = attacker:Team()
+        if teamnum < 1 or teamnum > 4 then return 0 end
         if teamnum == victim:Team() then
             attacker:PrintMessage(HUD_PRINTTALK, "Quit Team Killing")
         else
@@ -37,7 +38,7 @@ end
 function beginSurvival()
     bonusSurvivors = {}
     for _, ply in ipairs(player.GetAll()) do
-        bonusSurvivors[ply:SteamID()] = true
+        if ply:Team() >= 1 and ply:Team() <= 4 then bonusSurvivors[ply:SteamID()] = true end
     end
 
     hook.Add("PostPlayerDeath", "SurvivalDeath", survivalDeath)
@@ -49,7 +50,7 @@ end
 
 function endSurvival()
     for _, ply in ipairs(player.GetAll()) do
-        if bonusSurvivors[ply:SteamID()] == true then teams[ply:Team()].points = teams[ply:Team()].points + GetConVar("sts_survival_points"):GetInt() end
+        if bonusSurvivors[ply:SteamID()] == true and teams[ply:Team()] and teams[ply:Team()].points then teams[ply:Team()].points = teams[ply:Team()].points + GetConVar("sts_survival_points"):GetInt() end
     end
 
     for teamIndex = 1, 4 do
@@ -57,7 +58,7 @@ function endSurvival()
     end
 
     bonusSurvivors = {}
-    hook.Remove("PlayerDeath", "SurvivalDeath")
+    hook.Remove("PostPlayerDeath", "SurvivalDeath")
 end
 
 -- called in game by luarunner
@@ -995,9 +996,9 @@ function endDodgeball()
         teleportToTeamSpawn(ply)
     end
 
-    for _, ent in ipairs(player.GetAll()) do
+    for _, ent in ipairs(ents.GetAll()) do
         if string.find(ent:GetName(), "mapcit_ball_") then ent:Fire("Disable") end
-        if string.find(ent:GetName(), "mapcit_ballbeam_") then ent:Fire("Toggle") end
+        if string.find(ent:GetName(), "mapcit_ballbeam") then ent:Fire("Toggle") end
     end
 
     RunConsoleCommand("physcannon_mega_enabled", "0")

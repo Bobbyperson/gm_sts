@@ -150,7 +150,7 @@ function shouldStartLeverBeLocked()
     local teamedPlayers = getAmountOfTeamedPlayers()
     local totalPlayers = player.GetCount()
     local minimumRequired = GetConVar("sts_minimum_players"):GetInt()
-    local randomizedTeams = GetConVar("sts_random_teams"):GetInt()
+    local randomizedTeams = GetConVar("sts_random_teams"):GetInt() ~= 0
     for _, ent in ipairs(ents.GetAll()) do
         if ent:GetName() == "waiting_lobby_readylever" then
             if (teamedPlayers >= minimumRequired or (randomizedTeams and totalPlayers >= minimumRequired)) and gameStartedServer == false then
@@ -269,11 +269,6 @@ function GM:PlayerInitialSpawn(ply)
     end
 
     if game.MaxPlayers() > 16 then ply:PrintMessage(HUD_PRINTTALK, "WARNING! You are playing on a server which has more than 16 playerslots! This gamemode was not designed with more than 16 players in mind and you WILL run into bugs.") end
-    if ply:IsListenServerHost() and IsMounted("ep2") then
-        ply:PrintMessage(HUD_PRINTTALK, "You appear to have half life 2 episode 2 mounted. Episodic content has been enabled. If any players do not have episode 2 mounted, please set sts_episodic_content to 0 in console.")
-        GetConVar("sts_episodic_content"):SetInt(1)
-    end
-
     if gameStartedServer then sendStartToPlayers() end
     updateSettingsToClients(GetConVar("sts_starting_points"):GetInt(), GetConVar("sts_total_rounds"):GetInt())
     if math.random(1, 100) == 1 then playGlobalSound("sts_announcer/playerjoin.ogg") end
@@ -407,12 +402,12 @@ function addTeamPoints(teamName, change)
     local teamID = getTeamIDFromName(teamName)
     for _, entity in ipairs(ents.GetAll()) do
         if entity:GetName() == (teamName .. "_points") then
-            points = entity:GetNwInt("researchPoints")
-            entity:SetNWInt("researchPoints", points + change)
-            points = points + change
+            points = entity:GetNWInt("researchPoints") + change
+            entity:SetNWInt("researchPoints", points)
         end
     end
 
+    if points == nil then return end
     for _, ply in ipairs(player.GetAll()) do
         if ply:Team() == teamID then ply:SetNWInt("researchPoints", points) end
     end
@@ -459,14 +454,17 @@ function beginTeamAssignment()
         end)
 
         if npcClass == "npc_poisonzombie" then
+            local entIndex = ent:EntIndex()
+            local timerName = "CheckForPoison" .. entIndex
             timer.Simple(10 / 66, function()
-                ent = ents.GetByIndex(ent:EntIndex())
+                ent = ents.GetByIndex(entIndex)
+                if not IsValid(ent) then return end
                 local poisonZombieTeam = ent:GetName()
                 -- Start a timer that runs every second
-                -- print("Starting poison zombie check" .. ent:EntIndex())
-                timer.Create("CheckForPoison" .. ent:EntIndex(), 1 / 66, 6000, function()
-                    if not ent:IsValid() or ent:EntIndex() == 0 then
-                        timer.Remove("CheckForPoison" .. ent:EntIndex())
+                -- print("Starting poison zombie check" .. entIndex)
+                timer.Create(timerName, 1 / 66, 6000, function()
+                    if not IsValid(ent) then
+                        timer.Remove(timerName)
                         return
                     end
 
@@ -491,14 +489,17 @@ function beginTeamAssignment()
         end
 
         if npcClass == "npc_metropolice" then
+            local entIndex = ent:EntIndex()
+            local timerName = "CheckForManhacks" .. entIndex
             timer.Simple(10 / 66, function()
-                ent = ents.GetByIndex(ent:EntIndex())
+                ent = ents.GetByIndex(entIndex)
+                if not IsValid(ent) then return end
                 local metrocopTeam = ent:GetName()
                 -- Start a timer that runs every second
-                -- PrintMessage(HUD_PRINTTALK, "Starting metrocop check" .. ent:EntIndex())
-                timer.Create("CheckForManhacks" .. ent:EntIndex(), 1 / 66, 6000, function()
-                    if not ent:IsValid() or ent:EntIndex() == 0 then
-                        timer.Remove("CheckForManhacks" .. ent:EntIndex())
+                -- PrintMessage(HUD_PRINTTALK, "Starting metrocop check" .. entIndex)
+                timer.Create(timerName, 1 / 66, 6000, function()
+                    if not IsValid(ent) then
+                        timer.Remove(timerName)
                         return
                     end
 
@@ -517,7 +518,7 @@ function beginTeamAssignment()
                             foundEnt:SetMaxLookDistance(4000)
                             foundEnt:SetKeyValue("rendercolor", teamColors[metrocopTeam:lower()])
                             -- PrintMessage(HUD_PRINTTALK, "Assigned manhack team.")
-                            timer.Remove("CheckForManhacks" .. ent:EntIndex())
+                            timer.Remove(timerName)
                         end
                     end
                 end)
@@ -708,6 +709,11 @@ function upgradeABox(cubeName)
                 break
             end
         end
+    end
+
+    if not desiredCube then
+        PrintMessage(HUD_PRINTTALK, "Could not find cube in upgrade func! Report this in the discord please!")
+        return
     end
 
     if desiredCube.level == 5 then
@@ -909,6 +915,7 @@ function ReadyLeverPulled(teamName)
 end
 
 function shouldGameStart()
+    if gameState ~= 0 then return end
     local levers = {"waiting_blue_ready_lever", "waiting_red_ready_lever", "waiting_green_ready_lever", "waiting_yellow_ready_lever"}
     local doors = {"waiting_blue_door", "waiting_red_door", "waiting_green_door", "waiting_yellow_door"}
     local pulled = 0
@@ -1062,7 +1069,7 @@ function beginFight()
         end
     end)
 
-    timer.Simple(delay, function()
+    timer.Simple(largestDelay, function()
         -- PrintMessage(HUD_PRINTTALK, "checking for win")
         if GetConVar("sts_sudden_death"):GetInt() == 1 then
             timer.Create("SuddenDeath", GetConVar("sts_sudden_death_time"):GetInt(), 1, function()
@@ -1074,8 +1081,12 @@ function beginFight()
                         ply:SetHealth(100)
                         ply:Give("weapon_pistol")
                         ply:SetAmmo(1000, "Pistol")
-                        ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
-                        ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
+                        local spawns = nextMapSpawnLocations[getTeamNameFromID(ply:Team())]
+                        if spawns and #spawns > 0 then
+                            local spawn = spawns[(i - 1) % #spawns + 1]
+                            ply:SetPos(spawn[1])
+                            ply:SetAngles(spawn[2])
+                        end
                     end
                 end
 

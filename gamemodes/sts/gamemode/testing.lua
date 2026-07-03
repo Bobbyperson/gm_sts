@@ -131,7 +131,7 @@
         end
     end)
 
-    timer.Simple(delay, function()
+    timer.Simple(largestDelay, function()
         -- PrintMessage(HUD_PRINTTALK, "checking for win")
         if GetConVar("sts_sudden_death"):GetInt() == 1 then
             timer.Create("SuddenDeath", GetConVar("sts_sudden_death_time"):GetInt(), 1, function()
@@ -143,8 +143,12 @@
                         ply:SetHealth(100)
                         ply:Give("weapon_pistol")
                         ply:SetAmmo(1000, "Pistol")
-                        ply:SetPos(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][1])
-                        ply:SetAngles(nextMapSpawnLocations[getTeamNameFromID(ply:Team())][i][2])
+                        local spawns = nextMapSpawnLocations[getTeamNameFromID(ply:Team())]
+                        if spawns and #spawns > 0 then
+                            local spawn = spawns[(i - 1) % #spawns + 1]
+                            ply:SetPos(spawn[1])
+                            ply:SetAngles(spawn[2])
+                        end
                     end
                 end
 

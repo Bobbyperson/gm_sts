@@ -112,7 +112,8 @@ mobs[1] = {
     ["manhack"] = Mob.new("Manhack", {"npc_manhack"}, 1, 0.5),
     ["crowbar"] = Mob.new("Crowbar Guy", {"npc_crowbar"}, 1),
     ["stun"] = Mob.new("Stop Resisting", {"npc_stun"}, 1),
-    ["torso"] = Mob.new("Zombie Torso", {"npc_torso"}, 1)
+    ["torso"] = Mob.new("Zombie Torso", {"npc_torso"}, 1),
+    ["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
 }
 
 mobs[2] = {
@@ -135,7 +136,8 @@ mobs[3] = {
     ["suicide"] = Mob.new("Suicide", {"npc_suicide"}, 1, 0.5),
     -- ["healer"] = Mob.new("Healer", {"npc_healer"}, 1),
     ["doublezombie"] = Mob.new("Zombie (x2)", {"npc_zombie"}, 2, 0.75),
-    ["beefcake"] = Mob.new("Beefcake", {"npc_beefcake"}, 1)
+    ["beefcake"] = Mob.new("Beefcake", {"npc_beefcake"}, 1),
+    ["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
 }
 
 mobs[4] = {
@@ -148,18 +150,6 @@ mobs[4] = {
     ["bombsquad"] = Mob.new("Bombing Squad", {"npc_bombsquad"}, 3, 0.3),
     ["elitesquad"] = Mob.new("Elite Squad", {"npc_elitesquad_ar", "npc_elitesquad_shot"}, 1, 1)
 }
-
-cvars.AddChangeCallback("sts_episodic_content", function(convarName, valueOld, valueNew)
-    if valueNew == 1 then
-        mobs[3]["brute"] = Mob.new("Brute", {"npc_brute"}, 1)
-        mobs[1]["fasttorso"] = Mob.new("Fast Torso", {"npc_fasttorso"}, 1)
-    end
-
-    if valueNew == 0 then
-        mobs[3]["brute"] = nil
-        mobs[1]["fasttorso"] = nil
-    end
-end)
 
 function enablePlayerWallhacks()
     hook.Add("PreDrawHalos", "GivePlayersOutlines", function()

@@ -5,6 +5,7 @@ if SERVER then
     local function PointsRequest(length, client)
         -- Get the team of the player who sent the request
         local playerTeam = client:Team()
+        if not teams[playerTeam] or not teams[playerTeam].points then return end
         -- Respond to the client's request
         net.Start("SyncPoints")
         net.WriteInt(teams[playerTeam].points, 32) -- Send the current points of the player's team

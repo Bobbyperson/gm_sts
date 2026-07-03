@@ -43,8 +43,10 @@ hook.Add("BoxTrigger", "BoxHook", function()
     local activator, caller = ACTIVATOR, CALLER
     local triggerName = caller:GetName()
     local boxName = activator:GetName()
-    local teamName = string.sub(boxName, 1, string.find(boxName, "_") - 1) -- this works by finding the first underscore in the box name, then taking the substring from the start of the trigger name to the underscore
+    local teamName = string.match(boxName, "^(%a+)_box%d$") -- ignore anything that isn't a team box (players, NPCs, props also touch the trigger)
+    if not teamName then return end
     local teamID = getTeamIDFromName(teamName)
+    if not teamID then return end
     local spawnerID = tonumber(triggerName[-1])
     -- print( "teamName =", teamName, "\nteamID =", teamID, "\nspawnerID =", spawnerID, "\nboxName = ", boxName )
     table.insert(teams[teamID].spawners[spawnerID], teams[teamID].cubes["cube" .. boxName[-1]])
@@ -54,8 +56,10 @@ hook.Add("BoxUnTouchTrigger", "BoxUnTouchHook", function()
     local activator, caller = ACTIVATOR, CALLER
     local triggerName = caller:GetName()
     local boxName = activator:GetName()
-    local teamName = string.sub(boxName, 1, string.find(boxName, "_") - 1)
+    local teamName = string.match(boxName, "^(%a+)_box%d$")
+    if not teamName then return end
     local teamID = getTeamIDFromName(teamName)
+    if not teamID then return end
     local spawnerID = tonumber(triggerName[-1])
     -- print( "teamName =", teamName, "\nteamID =", teamID, "\nspawnerID =", spawnerID, "\nboxName = ", boxName )
     for i, cube in ipairs(teams[teamID].spawners[spawnerID]) do

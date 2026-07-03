@@ -29,7 +29,7 @@ function playGlobalSound(FileName, teamID, cleanupTime)
         filter = GlobalSoundCache[FileName].filter
     end
 
-    if cleanupTime then timer.Simple(cleanupTime, function() GlobalSoundCache[FileName] = nil end) end
+    if cleanupTime > 0 then timer.Simple(cleanupTime, function() GlobalSoundCache[FileName] = nil end) end
     if sound then
         if CLIENT then sound:Stop() end
         sound:Play()
