@@ -48,6 +48,7 @@ function setTeamFull(ply, teamID)
 end
 
 concommand.Add("set_team", function(ply, cmd, args)
+    if not IsValid(ply) then return end -- run from the server console
     local input = tonumber(args[1])
     if input == nil or (input > 4 or input < 0) then
         print("0 - No team\n1 - Blue\n2 - Red\n3 - Green\n4 - Yellow")

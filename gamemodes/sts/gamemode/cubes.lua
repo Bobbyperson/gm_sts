@@ -20,11 +20,9 @@ function Cube:setMob(raritychoice, mobchoice, strength)
     self.mob = mobs[raritychoice][mobchoice]
     self.key = mobchoice
     self.strength = strength
-    PrintTable(self.mob)
 end
 
 function Cube:randomize()
-    -- local desiredTeam
     local chosenMob
     if self.level == 1 then
         self.rarity = 1
@@ -45,14 +43,6 @@ function Cube:randomize()
     local keyset = {}
     for k in pairs(mobs[self.rarity]) do
         table.insert(keyset, k)
-    end
-
-    -- this is a bad way of doing this... Too Bad!
-    for _, prefix in ipairs(mobPrefixes) do
-        if string.find(self.entity, prefix) then
-            desiredTeam = prefix
-            break
-        end
     end
 
     chosenMob = keyset[math.random(#keyset)]

@@ -5,10 +5,13 @@
     [4] = false,
     [5] = false,
     [6] = false,
-    [7] = false
+    [7] = false,
+    [8] = false
 }
 
 function deathmatchKill(victim, inflictor, attacker)
+    -- CheckForWin only runs during a main fight; sudden death hands out pistols, which would otherwise farm points here
+    if timer.Exists("CheckForWin") then return 0 end
     if attacker == victim then
         attacker:PrintMessage(HUD_PRINTTALK, "Quit killing yourself")
     elseif attacker:IsPlayer() then

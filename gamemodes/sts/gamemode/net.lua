@@ -1,19 +1,5 @@
 ﻿include("teamsetup.lua")
--- Server side: listens to the "RequestPoints" message and responds with "SyncPoints"
-if SERVER then
-    util.AddNetworkString("SyncPoints")
-    local function PointsRequest(length, client)
-        -- Get the team of the player who sent the request
-        local playerTeam = client:Team()
-        if not teams[playerTeam] or not teams[playerTeam].points then return end
-        -- Respond to the client's request
-        net.Start("SyncPoints")
-        net.WriteInt(teams[playerTeam].points, 32) -- Send the current points of the player's team
-        net.Send(client) -- Only send to the client that made the request
-    end
-
-    net.Receive("RequestPoints", PointsRequest)
-end
+if SERVER then util.AddNetworkString("SyncPoints") end
 
 -- Client side: updating the points when receiving the "SyncPoints" message from the server
 if CLIENT then

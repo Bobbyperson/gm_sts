@@ -39,52 +39,60 @@
     local teamMobs = {} -- {1 = ..., 4 = ...}
     local delay
     local largestDelay = 0
+    local rarityNames = {"Common", "Uncommon", "Rare", "Legendary"}
+    -- kept local rather than written into teams[id].spawners: entries put there are never removed
+    -- (the box untouch hook only removes real cubes), so they leaked into every later real round
+    local testSpawners = {}
     for _, id in pairs(teamsToSpawn) do
+        testSpawners[id] = {}
         for i = 1, 4 do
             local level = math.random(1, 4)
             local keys = {}
             -- get keys of mobs[level]
             for key, _ in pairs(mobs[level]) do
                 table.insert(keys, key)
-                print(key)
             end
 
-            PrintTable(keys)
             local chosenmob = keys[math.random(1, #keys)]
-            print(chosenmob)
-            table.insert(teams[id].spawners[i], {
-                ["mob"] = mobs[level][chosenmob],
+            local mob = mobs[level][chosenmob]
+            local strength = math.random(1, 4)
+            testSpawners[id][i] = {{
+                ["mob"] = mob,
                 ["key"] = chosenmob,
                 ["multipler"] = 1,
-                ["strength"] = math.random(1, 4)
-            })
+                ["strength"] = strength
+            }}
+
+            -- getSpawns() emits one NPC per template per (multiplier * strength), so a 2-template
+            -- mob like the elite squad is worth double what the strength number alone suggests
+            local count = #mob.templates * mob.multiplier * strength
+            PrintMessage(HUD_PRINTTALK, string.format("[Test] %-6s cube %d: %s (%s) str %d -> %d NPC every %.2fs", teams[id].name, i, mob.name, rarityNames[level] or "?", strength, count, mob.delay))
         end
     end
 
     for _, id in pairs(teamsToSpawn) do
-        PrintTable(teams[id].spawners)
-        for _, spawner in ipairs(teams[id].spawners) do
+        for _, spawner in ipairs(testSpawners[id]) do
             if teamMobs[id] == nil then
                 teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
             else
                 TableConcat(teamMobs[id], spawner[1].mob:getSpawns(id, spawner[1].strength))
             end
         end
+
+        if teamMobs[id] then PrintMessage(HUD_PRINTTALK, string.format("[Test] %-6s fielding %d NPC total", teams[id].name, #teamMobs[id])) end
     end
 
     for i, theMobs in pairs(teamMobs) do
         delay = 0
         for _, mob in ipairs(theMobs) do
             delay = delay + mob[2]
-            -- if mob[3] then
-            --     timer.Simple(delay, mob[3](getTeamNameFromID(i), Vector(0,0,0)))
-            -- else
-            timer.Simple(delay, function() mob[1]:Fire("ForceSpawn") end)
-            -- end
+            timer.Simple(delay, mob[1])
         end
 
         if delay > largestDelay then largestDelay = delay end
     end
+
+    PrintMessage(HUD_PRINTTALK, string.format("[Test] last mob lands at %.1fs", largestDelay))
 
     local alive = {}
     for _, id in pairs(teamsToSpawn) do
@@ -138,7 +146,8 @@
                 suddenDeath = true
                 SendServerMessage("Sudden Death has started! Kill all enemy mobs to win!", Color(255, 255, 255), 3)
 
-                for aliveteam, _ in pairs(alive) do
+                for aliveteam, aliveState in pairs(alive) do
+                    if aliveState == -1 then continue end -- already eliminated
                     for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
                         ply:SetHealth(100)
                         ply:Give("weapon_pistol")
@@ -147,7 +156,7 @@
                         if spawns and #spawns > 0 then
                             local spawn = spawns[(i - 1) % #spawns + 1]
                             ply:SetPos(spawn[1])
-                            ply:SetAngles(spawn[2])
+                            ply:SetEyeAngles(spawn[2])
                         end
                     end
                 end
@@ -173,7 +182,7 @@
 
                 if suddenDeath then
                     for _, ent in ipairs(ents.GetAll()) do
-                        if ent:GetName() == aliveteam and ent:IsValid() and ent:IsNPC() then
+                        if string.sub(ent:GetName(), 1, #aliveteam) == aliveteam and ent:IsValid() and ent:IsNPC() then
                             for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
                                 ent:AddEntityRelationship(ply, D_LI, 10)
                             end
@@ -225,6 +234,7 @@
                 playGlobalSound("sts_announcer/" .. winnerShorter[winner] .. "_win" .. math.random(1, 3) .. ".wav")
                 endRound()
                 disablePlayerWallhacksGlobally()
+                disableNPCWallhacksGlobally()
             elseif amountalive == 0 then
                 timer.Remove("CheckForWin")
                 timer.Remove("SuddenDeath")
@@ -238,6 +248,7 @@
                 SendServerMessage("Tie!", Color(255, 255, 255), 3)
                 endRound()
                 disablePlayerWallhacksGlobally()
+                disableNPCWallhacksGlobally()
             end
         end)
     end)

@@ -1,5 +1,4 @@
-﻿local ply = FindMetaTable("Player")
-include("cubes.lua")
+﻿include("cubes.lua")
 teams = {}
 teams[1] = {
     name = "Blue",
@@ -100,11 +99,3 @@ teams[5] = {
         [4] = {}
     },
 }
-
--- deprecated?
-function ply:SetupTeam(n)
-    if not teams[n] then return end
-    self:SetTeam(n)
-    self:SetPlayerColor(teams[n].color)
-    self:SetModel("models/player/police.mdl")
-end

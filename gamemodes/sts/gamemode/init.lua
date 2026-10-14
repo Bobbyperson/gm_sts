@@ -118,20 +118,6 @@ cvars.AddChangeCallback("sts_total_rounds", function(convarName, valueOld, value
     end
 end)
 
-function lockButtonsAfterGameStart()
-    for _, ent in ipairs(ents.GetAll()) do
-        if ent:GetName() == "waiting_score_up" then
-            ent:Fire("lock")
-        elseif ent:GetName() == "waiting_score_down" then
-            ent:Fire("lock")
-        elseif ent:GetName() == "waiting_startpnt_down" then
-            ent:Fire("lock")
-        elseif ent:GetName() == "waiting_startpnt_up" then
-            ent:Fire("lock")
-        end
-    end
-end
-
 cvars.AddChangeCallback("sts_minimum_players", function(convarName, valueOld, valueNew) shouldStartLeverBeLocked() end)
 function getAmountOfTeamedPlayers()
     local teamedPlayers = 0
@@ -156,11 +142,9 @@ function shouldStartLeverBeLocked()
             if (teamedPlayers >= minimumRequired or (randomizedTeams and totalPlayers >= minimumRequired)) and gameStartedServer == false then
                 ent:Fire("Unlock")
                 -- PrintMessage(HUD_PRINTTALK, "Unlocked!")
-                return false
             else
                 ent:Fire("Lock")
                 -- PrintMessage(HUD_PRINTTALK, "Locked!")
-                return true
             end
         end
 
@@ -364,11 +348,14 @@ end
 
 -- checks to see if server is empty on player disconnects
 function GM:PlayerDisconnected(ply)
-    shouldStartLeverBeLocked()
     print("A player has disconnected")
     print(ply:Name() .. " has left the server.")
     if gameStartedServer then timer.Simple(10, allgonecheck) end
-    if gameState == 0 then shouldGameStart() end
+    -- the leaving player is still counted by player.GetCount()/team.GetPlayers() during this hook
+    timer.Simple(0, function()
+        shouldStartLeverBeLocked()
+        if gameState == 0 then shouldGameStart() end
+    end)
     if math.random(1, 100) == 1 then playGlobalSound("sts_announcer/playerleave.ogg") end
 end
 
@@ -397,29 +384,14 @@ function gameReset()
     RunConsoleCommand("changelevel", "gm_sts") -- should've done this from the beginning
 end
 
-function addTeamPoints(teamName, change)
-    local points
-    local teamID = getTeamIDFromName(teamName)
-    for _, entity in ipairs(ents.GetAll()) do
-        if entity:GetName() == (teamName .. "_points") then
-            points = entity:GetNWInt("researchPoints") + change
-            entity:SetNWInt("researchPoints", points)
-        end
-    end
-
-    if points == nil then return end
-    for _, ply in ipairs(player.GetAll()) do
-        if ply:Team() == teamID then ply:SetNWInt("researchPoints", points) end
-    end
-end
-
 function beginTeamAssignment()
     -- needs significant testing
     hook.Add("OnEntityCreated", "AssignTeams", function(ent)
         if not ent:IsValid() or not ent:IsNPC() then return end
         local npcClass = ent:GetClass()
+        local entIndex = ent:EntIndex() -- captured now; calling EntIndex() on a removed entity later can throw
         timer.Simple(3 / 66, function()
-            ent = ents.GetByIndex(ent:EntIndex())
+            ent = ents.GetByIndex(entIndex)
             if not ent:IsValid() or not ent:IsNPC() then return end
             if ent:GetName() ~= "" then ent = AssignTeam(ent, ent:GetName(), true) end
         end)
@@ -435,26 +407,28 @@ function beginTeamAssignment()
             -- string.find(ent:GetName(), "notp") or
             -- npcClass == "npc_turret_floor" then return end -- mob was spawned by already existing mob and does not need teleporting
             -- reacquire ent because it might have changed
-            ent = ents.GetByIndex(ent:EntIndex())
+            ent = ents.GetByIndex(entIndex)
             if not ent:IsValid() or not ent:IsNPC() then return end
             if npcClass == "npc_turret_floor" then return end
             if ent:GetName() == "" then return end
             if string.find(ent:GetName(), "notp") then return end
             -- i forgot why this is waiting an extra tick
             timer.Simple(2 / 66, function()
-                -- PrintMessage(HUD_PRINTTALK, "teleporting!!!!! " .. ent:GetName() .. " " .. npcClass)
-                local randspawnpoint = math.random(1, 5)
-                -- print("teleporting to " .. randspawnpoint)
-                -- print("name is " .. ent:GetName())
-                -- print(string.sub(string.lower(ent:GetName()), 1, string.find(string.lower(ent:GetName()), "team") - 1))
-                ent:SetPos(nextMapSpawnLocations[string.sub(string.lower(ent:GetName()), 1, string.find(string.lower(ent:GetName()), "team") - 1)][randspawnpoint][1]) -- TODO: frequently does nil values
-                ent:SetAngles(nextMapSpawnLocations[string.sub(string.lower(ent:GetName()), 1, string.find(string.lower(ent:GetName()), "team") - 1)][randspawnpoint][2])
+                if not IsValid(ent) then return end
+                local name = string.lower(ent:GetName())
+                local teamEnd = string.find(name, "team", 1, true)
+                if not teamEnd then return end
+                -- pick from however many spawns the map actually has instead of assuming 5
+                local spawns = nextMapSpawnLocations[string.sub(name, 1, teamEnd - 1)]
+                if not spawns or #spawns == 0 then return end
+                local spawn = spawns[math.random(#spawns)]
+                ent:SetPos(spawn[1])
+                ent:SetAngles(spawn[2])
                 ent:SetMaxLookDistance(4000)
             end)
         end)
 
         if npcClass == "npc_poisonzombie" then
-            local entIndex = ent:EntIndex()
             local timerName = "CheckForPoison" .. entIndex
             timer.Simple(10 / 66, function()
                 ent = ents.GetByIndex(entIndex)
@@ -471,17 +445,10 @@ function beginTeamAssignment()
                     local foundEntities = ents.FindInSphere(ent:GetPos(), 100) -- adjust radius as necessary
                     for _, foundEnt in pairs(foundEntities) do
                         if foundEnt:GetClass() == "npc_headcrab_poison" and foundEnt:GetName() == "" then
-                            local teamColors = {
-                                ["redteam"] = "255 0 0",
-                                ["blueteam"] = "0 0 255",
-                                ["yellowteam"] = "255 255 0",
-                                ["greenteam"] = "0 255 0"
-                            }
-
                             -- PrintMessage(HUD_PRINTTALK, "found poison zombie")
                             AssignTeam(foundEnt, poisonZombieTeam, false)
                             foundEnt:SetMaxLookDistance(4000)
-                            foundEnt:SetKeyValue("rendercolor", teamColors[poisonZombieTeam:lower()])
+                            foundEnt:SetKeyValue("rendercolor", teamColorStrings[poisonZombieTeam:lower()])
                         end
                     end
                 end)
@@ -489,7 +456,6 @@ function beginTeamAssignment()
         end
 
         if npcClass == "npc_metropolice" then
-            local entIndex = ent:EntIndex()
             local timerName = "CheckForManhacks" .. entIndex
             timer.Simple(10 / 66, function()
                 ent = ents.GetByIndex(entIndex)
@@ -506,17 +472,10 @@ function beginTeamAssignment()
                     local foundEntities = ents.FindInSphere(ent:GetPos(), 100) -- adjust radius as necessary
                     for _, foundEnt in pairs(foundEntities) do
                         if foundEnt:GetClass() == "npc_manhack" and foundEnt:GetName() == "" then
-                            local teamColors = {
-                                ["redteam"] = "255 0 0",
-                                ["blueteam"] = "0 0 255",
-                                ["yellowteam"] = "255 255 0",
-                                ["greenteam"] = "0 255 0"
-                            }
-
                             -- PrintMessage(HUD_PRINTTALK, "manhack found!")
                             AssignTeam(foundEnt, metrocopTeam, false)
                             foundEnt:SetMaxLookDistance(4000)
-                            foundEnt:SetKeyValue("rendercolor", teamColors[metrocopTeam:lower()])
+                            foundEnt:SetKeyValue("rendercolor", teamColorStrings[metrocopTeam:lower()])
                             -- PrintMessage(HUD_PRINTTALK, "Assigned manhack team.")
                             timer.Remove(timerName)
                         end
@@ -532,7 +491,7 @@ function endTeamAssignment()
 end
 
 hook.Add("OnNPCKilled", "TrackZombieDeath", function(npc)
-    local zombieTypes = {"npc_zombie", "npc_zombie_torso", "npc_fastzombie", "npc_poisonzombie"}
+    local zombieTypes = {"npc_zombie", "npc_zombie_torso", "npc_fastzombie", "npc_fastzombie_torso", "npc_poisonzombie", "npc_zombine"}
     for _, type in pairs(zombieTypes) do
         if npc:GetClass() == type and npc:GetName() ~= "" then
             local deadZombiePos = npc:GetPos()
@@ -543,15 +502,8 @@ hook.Add("OnNPCKilled", "TrackZombieDeath", function(npc)
                 local foundEntities = ents.FindInSphere(deadZombiePos, 400)
                 for _, ent in pairs(foundEntities) do
                     if (ent:GetClass() == "npc_headcrab" or ent:GetClass() == "npc_headcrab_fast" or ent:GetClass() == "npc_headcrab_black") and ent:GetName() == "" then
-                        local teamColors = {
-                            ["redteam"] = "255 0 0",
-                            ["blueteam"] = "0 0 255",
-                            ["yellowteam"] = "255 255 0",
-                            ["greenteam"] = "0 255 0"
-                        }
-
                         ent:SetMaxLookDistance(4000)
-                        ent:SetKeyValue("rendercolor", teamColors[deadZombieTeam:lower()])
+                        ent:SetKeyValue("rendercolor", teamColorStrings[deadZombieTeam:lower()])
                         AssignTeam(ent, deadZombieTeam, false)
                         timer.Remove(timerName)
                         return
@@ -583,6 +535,17 @@ function AssignTeam(ent, teamInput, tpDesired)
     -- print("2Name is " .. ent:GetName())
     for i, teamName in pairs(npcColors) do
         teamEnts[i] = ents.FindByName(teamName)
+        -- Anything assigned with tpDesired = false gets renamed "<team>notp" below, and a plain
+        -- FindByName("redteam") does not match "redteamnotp" - so valkyrie turrets, metrocop
+        -- manhacks and headcrabs off dying zombies were dropped out of the relationship graph
+        -- entirely. They only ever got the relationships that existed the instant they spawned,
+        -- and nothing spawning later was ever told to hate them (or told they should hate it).
+        -- That is why valkyrie turrets sat there ignoring manhacks: with no explicit relationship
+        -- both fall back to their default class disposition, and neither one is hostile to the
+        -- other by default. Pull the notp variants in so they get wired up like everything else.
+        for _, notpEnt in ipairs(ents.FindByName(teamName .. "notp")) do
+            table.insert(teamEnts[i], notpEnt)
+        end
     end
 
     for i, teamName in pairs(npcColors) do
@@ -660,7 +623,7 @@ function randomizeTeams(mode)
 
     local players = player.GetAll()
     local i = 1
-    if #players > 8 then mode = 1 end
+    if #players > 8 then mode = 2 end -- two teams cap at 4 players each (set_team limit, tpdest1-4)
     local teamCount = mode * 2
     if mode == 2 then
         while #players > 0 do
@@ -779,6 +742,11 @@ function randomizeABox(cubeName)
         end
     end
 
+    if not desiredCube then
+        PrintMessage(HUD_PRINTTALK, "Could not find cube in randomize func! Report this in the discord please!")
+        return
+    end
+
     if availablePoints <= 0 then
         for _, ply in ipairs(player.GetAll()) do
             if ply:Team() == teamID then ply:PrintMessage(HUD_PRINTTALK, "Cannot afford!") end
@@ -786,19 +754,8 @@ function randomizeABox(cubeName)
         return
     end
 
-    if desiredCube then
-        desiredCube:randomize()
-        for _, teamName in ipairs(teams) do
-            for _, cube in pairs(teamName.cubes) do
-                if cube.entity == cubeName then
-                    teamName.points = teamName.points - 1
-                    break
-                end
-            end
-        end
-    else
-        PrintMessage(HUD_PRINTTALK, "Could not find cube in randomize func! Report this in the discord please!")
-    end
+    desiredCube:randomize()
+    teams[teamID].points = teams[teamID].points - 1
 
     -- lazy
     for teamIndex = 1, 4 do
@@ -820,7 +777,8 @@ end
 
 function chooseBonusRound()
     local options = getChosenBonusRounds()
-    if options == {} then return {} end
+    -- bonus rounds toggled off; math.random(0) would throw. (options == {} is always false in Lua)
+    if #options == 0 then return "" end
     if #options == 1 then return options[1] end
     for i, br in ipairs(options) do
         if br == nextBR then table.remove(options, i) end
@@ -930,7 +888,7 @@ function shouldGameStart()
         end
     end
 
-    if required <= pulled then
+    if required > 0 and required <= pulled then
         gameState = 1
         SendServerMessage("All Teams Ready!", Color(255, 255, 255))
         timer.Simple(5, function() SendServerMessage("Fight begins in 5", Color(255, 255, 255)) end)
@@ -1000,7 +958,6 @@ function beginFight()
     local delay
     local largestDelay = 0
     for _, id in pairs(teamsToSpawn) do
-        PrintTable(teams[id].spawners)
         for _, spawner in ipairs(teams[id].spawners) do
             if teamMobs[id] == nil then
                 teamMobs[id] = spawner[1].mob:getSpawns(id, spawner[1].strength)
@@ -1014,11 +971,7 @@ function beginFight()
         delay = 0
         for _, mob in ipairs(mobs) do
             delay = delay + mob[2]
-            -- if mob[3] then
-            --     timer.Simple(delay, mob[3](getTeamNameFromID(i), Vector(0,0,0)))
-            -- else
-            timer.Simple(delay, function() mob[1]:Fire("ForceSpawn") end)
-            -- end
+            timer.Simple(delay, mob[1])
         end
 
         if delay > largestDelay then largestDelay = delay end
@@ -1076,7 +1029,8 @@ function beginFight()
                 suddenDeath = true
                 SendServerMessage("Sudden Death has started! Kill all enemy mobs to win!", Color(255, 255, 255), 3)
 
-                for aliveteam, _ in pairs(alive) do
+                for aliveteam, aliveState in pairs(alive) do
+                    if aliveState == -1 then continue end -- already eliminated
                     for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
                         ply:SetHealth(100)
                         ply:Give("weapon_pistol")
@@ -1085,7 +1039,7 @@ function beginFight()
                         if spawns and #spawns > 0 then
                             local spawn = spawns[(i - 1) % #spawns + 1]
                             ply:SetPos(spawn[1])
-                            ply:SetAngles(spawn[2])
+                            ply:SetEyeAngles(spawn[2])
                         end
                     end
                 end
@@ -1111,7 +1065,8 @@ function beginFight()
 
                 if suddenDeath then
                     for _, ent in ipairs(ents.GetAll()) do
-                        if ent:GetName() == aliveteam and ent:IsValid() and ent:IsNPC() then
+                        -- prefix match so "<team>notp" children (turrets, manhacks, headcrabs) side with their own players
+                        if string.sub(ent:GetName(), 1, #aliveteam) == aliveteam and ent:IsValid() and ent:IsNPC() then
                             for i, ply in pairs(team.GetPlayers(getTeamIDFromName(winnerShorter[aliveteam]))) do
                                 ent:AddEntityRelationship(ply, D_LI, 10)
                             end
@@ -1309,7 +1264,15 @@ function cleanupMap(map)
 end
 
 function doBonusRound()
-    getBonusRoundBeginFunc()()
+    -- nextBR is "" if bonus rounds were toggled off when it was last chosen
+    if not getBonusRoundBeginFunc() then nextBR = chooseBonusRound() end
+    local beginFunc = getBonusRoundBeginFunc()
+    if not beginFunc then
+        unmuteMainTrack()
+        return
+    end
+
+    beginFunc()
     nextBR = chooseBonusRound()
 end
 
